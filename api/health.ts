@@ -1,3 +1,4 @@
+// Vercel Serverless Health Check Endpoint
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { applyCorsHeaders } from "./_lib/helpers.js";
 
