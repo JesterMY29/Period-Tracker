@@ -100,18 +100,22 @@ export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
 
   // Send message to AI Chat
   const handleSendMessage = async (textToSend?: string) => {
-    const question = textToSend || inputQuestion.trim();
-    if (!question || sendingChat) return;
+    const questionText = (textToSend || inputQuestion).trim();
+    if (!questionText || sendingChat) return;
+
+    if (!textToSend) setInputQuestion('');
 
     const userMsg: ChatMessage = {
       id: String(Date.now()),
       sender: 'user',
-      text: question,
+      text: questionText,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
+    // Build history payload from current messages snapshot before appending new question
+    const historyPayload = messages.filter(m => m.id !== '1');
+
     setMessages(prev => [...prev, userMsg]);
-    if (!textToSend) setInputQuestion('');
     setSendingChat(true);
 
     try {
@@ -119,13 +123,13 @@ export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question,
+          question: questionText,
           currentContext: {
             phase: currentPhase,
             cycleDay,
             avgCycleLength,
           },
-          history: messages.slice(-6),
+          history: historyPayload,
         }),
       });
 
