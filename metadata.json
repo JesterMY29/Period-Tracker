@@ -1,0 +1,6 @@
+{
+  "name": "AuraCycle - Period & Health Tracker",
+  "description": "Intelligent menstrual cycle tracking, phase-based wellness guidance, symptom logging, and AI health insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
