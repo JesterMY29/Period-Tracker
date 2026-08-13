@@ -21,19 +21,24 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-[#fffbf2]/95 backdrop-blur-md pt-4 pb-2 px-2 sm:px-6 max-w-7xl mx-auto">
-      <nav className="neo-border-4 bg-white px-4 sm:px-8 py-3.5 neo-shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Logo & Status Badge */}
-        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-3">
-            <span className="font-hand font-bold text-3xl sm:text-4xl text-[#0081a7] leading-none">
-              AuraCycle.io
-            </span>
-            <span className="neo-badge text-[10px] sm:text-xs transform -rotate-1 bg-[#0081a7] text-white">
-              Day {cycleDay} • {currentPhase}
-            </span>
+      <nav className="neo-border-4 bg-white px-4 sm:px-6 py-3 neo-shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Logo & Status Indicators */}
+        <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto justify-between md:justify-start flex-wrap">
+          <span className="font-hand font-bold text-3xl sm:text-4xl text-[#0081a7] leading-none">
+            AuraCycle.io
+          </span>
+
+          <div className="h-6 w-0.5 bg-[#1b2021] hidden sm:block" />
+
+          {/* Status Badge */}
+          <div className="border-2 border-[#1b2021] bg-[#0081a7] text-white px-3 py-1 font-mono text-xs font-extrabold uppercase tracking-wide flex items-center gap-1.5 neo-shadow-sm">
+            <span>DAY {cycleDay} • {currentPhase}</span>
           </div>
 
-          <p className="text-xs font-mono font-bold text-[#1b2021] hidden lg:block border-l-2 border-[#1b2021] pl-3">
+          <div className="h-6 w-0.5 bg-[#1b2021] hidden lg:block" />
+
+          {/* Next Period Info */}
+          <p className="text-xs font-mono font-bold text-[#1b2021] hidden lg:block uppercase tracking-tight">
             {daysUntilNextPeriod > 0
               ? `NEXT_PERIOD: IN_${daysUntilNextPeriod}_DAYS`
               : daysUntilNextPeriod === 0
@@ -58,23 +63,23 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="nav-tab-today"
             onClick={() => setActiveTab('today')}
-            className={`px-3 py-2 border-2 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'today'
-                ? 'border-[#1b2021] bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'border-transparent hover:border-[#1b2021] text-[#1b2021]'
+                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
+                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Compass className="w-4 h-4 text-[#0081a7]" />
             Today
           </button>
 
           <button
             id="nav-tab-calendar"
             onClick={() => setActiveTab('calendar')}
-            className={`px-3 py-2 border-2 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'calendar'
-                ? 'border-[#1b2021] bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'border-transparent hover:border-[#1b2021] text-[#1b2021]'
+                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
+                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
             }`}
           >
             <Calendar className="w-4 h-4" />
@@ -84,23 +89,23 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="nav-tab-ai"
             onClick={() => setActiveTab('ai')}
-            className={`px-3 py-2 border-2 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'ai'
-                ? 'border-[#1b2021] bg-[#f07167] text-white neo-shadow-sm'
-                : 'border-transparent hover:border-[#1b2021] text-[#1b2021]'
+                ? 'bg-[#f07167] text-white neo-shadow-sm'
+                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-200" />
+            <Sparkles className="w-4 h-4 text-[#f07167]" />
             AI Insights
           </button>
 
           <button
             id="nav-tab-analytics"
             onClick={() => setActiveTab('analytics')}
-            className={`px-3 py-2 border-2 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'analytics'
-                ? 'border-[#1b2021] bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'border-transparent hover:border-[#1b2021] text-[#1b2021]'
+                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
+                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
             }`}
           >
             <BarChart2 className="w-4 h-4" />
@@ -110,10 +115,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="nav-tab-settings"
             onClick={() => setActiveTab('settings')}
-            className={`px-3 py-2 border-2 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'settings'
-                ? 'border-[#1b2021] bg-[#0081a7] text-white neo-shadow-sm'
-                : 'border-transparent hover:border-[#1b2021] text-[#1b2021]'
+                ? 'bg-[#0081a7] text-white neo-shadow-sm'
+                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
             }`}
             title="Settings"
           >
@@ -124,9 +129,9 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="header-quick-log-btn"
             onClick={onOpenLogModal}
-            className="hidden md:flex neo-btn bg-[#f07167] text-white text-xs px-3.5 py-2 items-center gap-1.5 cursor-pointer ml-2"
+            className="hidden md:flex neo-btn bg-[#f07167] text-white text-xs px-3.5 py-2 items-center gap-1.5 cursor-pointer ml-1"
           >
-            <Plus className="w-4 h-4" /> Log Entry
+            <Plus className="w-4 h-4" /> LOG ENTRY
           </button>
         </div>
       </nav>

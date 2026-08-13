@@ -149,6 +149,7 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
           <h2 className="text-xl sm:text-2xl font-sans font-extrabold text-[#1b2021] tracking-tight">
             Select Phase to Preview Physiology
           </h2>
+          <div className="w-28 h-6 bg-[#1b2021] neo-shadow-sm mt-1" />
         </div>
 
         {/* Phase Tabs */}
@@ -165,13 +166,13 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
                 className={`font-mono text-xs font-bold uppercase px-3.5 py-2 border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
                   isSelected
                     ? 'border-[#1b2021] bg-[#f07167] text-white neo-shadow-sm'
-                    : 'border-[#1b2021] bg-[#fffbf2] text-[#1b2021] hover:bg-[#fed9b7]'
+                    : 'border-[#1b2021] bg-white text-[#1b2021] hover:bg-[#fed9b7]'
                 }`}
               >
                 <span>{p.phase}</span>
                 {isCurrentToday && (
                   <span
-                    className={`w-2 h-2 rounded-full ${
+                    className={`w-2.5 h-2.5 rounded-full ${
                       isSelected ? 'bg-white' : 'bg-[#0081a7]'
                     }`}
                     title="Today's Active Phase"
@@ -208,18 +209,21 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
               Shift <em className="neo-em font-serif italic">Energy</em> &amp; Physiology
             </h1>
 
-            <p className="text-base sm:text-lg text-[#1b2021]/85 leading-relaxed font-sans mb-6">
-              {activeDetail.description} {activeDetail.energyDescription}
-            </p>
+            <div className="text-base sm:text-lg text-[#1b2021]/85 leading-relaxed font-sans mb-6">
+              <div className="w-36 h-7 bg-[#1b2021] neo-shadow-sm my-1 inline-block mr-2 align-middle" />
+              <span>
+                {activeDetail.description} {activeDetail.energyDescription}
+              </span>
+            </div>
 
             {/* Energy Gauge Bar */}
             <div className="p-4 border-2 border-[#1b2021] bg-[#fffbf2] neo-shadow-sm mb-6 space-y-2">
               <div className="flex items-center justify-between font-mono text-xs font-bold uppercase">
                 <span className="flex items-center gap-2 text-[#1b2021]">
                   {getEnergyIcon(activeDetail.energyLevel)}
-                  Energy Level: {activeDetail.energyLevel} ({activeDetail.energyPercent}%)
+                  ENERGY LEVEL: {activeDetail.energyLevel.toUpperCase()} ({activeDetail.energyPercent}%)
                 </span>
-                <span className="text-[#0081a7]">{activeDetail.energyTagline}</span>
+                <span className="text-[#0081a7]">{activeDetail.energyTagline.toUpperCase()}</span>
               </div>
               <div className="w-full h-3 bg-white border-2 border-[#1b2021] overflow-hidden p-0.5">
                 <motion.div
@@ -235,7 +239,7 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="p-3.5 border-2 border-dashed border-[#1b2021] bg-[#fffbf2]">
                 <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#0081a7] block mb-1">
-                  Hormones
+                  HORMONES
                 </span>
                 <div className="font-sans font-bold text-sm text-[#1b2021]">
                   {activeDetail.hormoneSummary}
@@ -244,7 +248,7 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
 
               <div className="p-3.5 border-2 border-dashed border-[#1b2021] bg-[#fffbf2]">
                 <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#0081a7] block mb-1">
-                  Best Movement
+                  BEST MOVEMENT
                 </span>
                 <div className="font-sans font-bold text-sm text-[#1b2021]">
                   {activeDetail.recommendedActivity}
@@ -260,14 +264,14 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
               onClick={onOpenLogModal}
               className="neo-btn bg-[#f07167] text-white px-6 py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Calendar className="w-4 h-4" /> Log Daily Entry
+              <Calendar className="w-4 h-4" /> LOG DAILY ENTRY
             </button>
             <button
               id="cycle-wheel-ai-insight-btn"
               onClick={onNavigateToAI}
               className="neo-btn bg-white text-[#1b2021] px-6 py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-[#f07167]" /> Ask AI Health Guide
+              <Sparkles className="w-4 h-4 text-[#f07167]" /> ASK AI HEALTH GUIDE
             </button>
           </div>
         </div>
@@ -283,16 +287,16 @@ export const CycleWheel: React.FC<CycleWheelProps> = ({
               {cycleDay}
             </div>
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#0081a7] border-t-2 border-[#1b2021] pt-2">
-              In the cycle ({avgCycleLength} days total)
+              IN THE CYCLE ({avgCycleLength} DAYS TOTAL)
             </span>
 
             {/* Sub-badge for Next Period */}
-            <div className="mt-4 neo-badge bg-white text-[#1b2021] text-[10px]">
+            <div className="mt-4 neo-badge bg-[#0081a7] text-white border-2 border-[#1b2021] neo-shadow-sm font-mono text-[10px] font-bold uppercase">
               {daysUntilNextPeriod > 0
-                ? `Next period in ~${daysUntilNextPeriod} days`
+                ? `NEXT PERIOD IN ~${daysUntilNextPeriod} DAYS`
                 : daysUntilNextPeriod === 0
-                ? 'Period expected today'
-                : `Period day ${Math.abs(daysUntilNextPeriod)}`}
+                ? 'PERIOD EXPECTED TODAY'
+                : `PERIOD DAY ${Math.abs(daysUntilNextPeriod)}`}
             </div>
           </div>
 

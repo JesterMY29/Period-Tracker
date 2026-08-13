@@ -7,6 +7,7 @@ import { SymptomLoggerModal } from './components/SymptomLoggerModal';
 import { AIInsightsTab } from './components/AIInsightsTab';
 import { AnalyticsTab } from './components/AnalyticsTab';
 import { RemindersSettingsModal } from './components/RemindersSettingsModal';
+import { TipOfTheDayCard } from './components/TipOfTheDayCard';
 import { DayLog, CycleSettings } from './types';
 import {
   getDefaultSettings,
@@ -154,20 +155,27 @@ export default function App() {
                 onNavigateToAI={() => setActiveTab('ai')}
               />
 
+              {/* AI Tip of the Day Card */}
+              <TipOfTheDayCard
+                currentPhase={phaseInfo.phase}
+                cycleDay={cycleDetails.cycleDay}
+                todayLog={todayLog}
+              />
+
               {/* Today's Log Card & Quick Summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Today Log Status Card */}
-                <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-[#f0ede8] shadow-xs space-y-4 md:col-span-2">
-                  <div className="flex items-center justify-between">
+                <div className="neo-border-4 bg-white p-6 sm:p-8 neo-shadow space-y-4 md:col-span-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-full bg-[#f7e8e5] text-[#d97d6e]">
+                      <div className="p-2.5 border-2 border-[#1b2021] bg-[#f07167] text-white neo-shadow-sm">
                         <CalendarIcon className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-serif font-bold text-[#2d2d2a]">
-                          Today's Symptom Log ({todayStr})
+                        <h3 className="text-xl font-extrabold text-[#1b2021]">
+                          TODAY'S SYMPTOM LOG ({todayStr})
                         </h3>
-                        <p className="text-xs text-[#a19c91] font-sans">
+                        <p className="font-mono text-xs text-[#0081a7]">
                           {todayLog ? 'Log entry recorded for today' : 'No symptoms logged yet today'}
                         </p>
                       </div>
@@ -176,29 +184,29 @@ export default function App() {
                     <button
                       id="today-log-edit-btn"
                       onClick={() => handleOpenLogModalForDate(todayStr)}
-                      className="px-4 py-2.5 rounded-full bg-[#d97d6e] hover:bg-[#c26a5c] text-white text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      className="neo-btn bg-[#0081a7] text-white px-4 py-2.5 text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      {todayLog ? 'Update Entry' : 'Add Entry'}
+                      {todayLog ? 'UPDATE ENTRY' : 'ADD ENTRY'}
                     </button>
                   </div>
 
                   {todayLog ? (
-                    <div className="p-5 rounded-[24px] bg-[#fdfaf5] border border-[#e5e0d8] space-y-3">
+                    <div className="p-5 bg-[#fffbf2] border-2 border-[#1b2021] space-y-3 font-mono">
                       <div className="flex flex-wrap gap-2 items-center">
-                        <span className="text-xs font-bold text-[#7c8363] uppercase tracking-wider font-sans">Flow:</span>
-                        <span className="px-3 py-1 rounded-full bg-[#f7e8e5] text-[#8c3e32] text-xs font-sans font-semibold border border-[#e8d5cc]">
+                        <span className="text-xs font-bold text-[#1b2021] uppercase">FLOW:</span>
+                        <span className="px-3 py-1 bg-[#fed9b7] text-[#1b2021] text-xs font-bold border border-[#1b2021]">
                           {todayLog.flow}
                         </span>
 
                         {todayLog.waterOz && (
-                          <span className="px-3 py-1 rounded-full bg-[#edf5f0] text-[#2e593e] text-xs font-sans font-semibold border border-[#cce3d5]">
+                          <span className="px-3 py-1 bg-white text-[#1b2021] text-xs font-bold border border-[#1b2021]">
                             💧 {todayLog.waterOz} oz water
                           </span>
                         )}
 
                         {todayLog.sleepHours && (
-                          <span className="px-3 py-1 rounded-full bg-[#f0f2eb] text-[#464c33] text-xs font-sans font-semibold border border-[#d4d8c8]">
+                          <span className="px-3 py-1 bg-white text-[#1b2021] text-xs font-bold border border-[#1b2021]">
                             🌙 {todayLog.sleepHours} hrs sleep
                           </span>
                         )}
@@ -206,14 +214,14 @@ export default function App() {
 
                       {todayLog.symptoms.length > 0 && (
                         <div>
-                          <span className="text-xs font-bold text-[#a19c91] uppercase tracking-wider font-sans block mb-1.5">
-                            Logged Symptoms:
+                          <span className="text-xs font-bold text-[#0081a7] uppercase block mb-1.5">
+                            LOGGED SYMPTOMS:
                           </span>
                           <div className="flex flex-wrap gap-2">
                             {todayLog.symptoms.map((s, idx) => (
                               <span
                                 key={idx}
-                                className="px-3 py-1 rounded-full bg-white text-[#d97d6e] border border-[#d97d6e] text-xs font-sans font-medium"
+                                className="px-3 py-1 bg-white text-[#f07167] border-2 border-[#1b2021] text-xs font-bold"
                               >
                                 {s}
                               </span>
@@ -223,20 +231,20 @@ export default function App() {
                       )}
 
                       {todayLog.notes && (
-                        <div className="text-xs text-[#4a4a40] italic bg-white p-3.5 rounded-2xl border border-[#e5e0d8]">
+                        <div className="text-xs text-[#1b2021] italic bg-white p-3.5 border-2 border-[#1b2021]">
                           "{todayLog.notes}"
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="p-6 rounded-[24px] bg-[#fdfaf5] border border-dashed border-[#e5e0d8] text-center space-y-2">
-                      <p className="text-xs text-[#a19c91] font-sans">
+                    <div className="p-6 bg-[#fffbf2] border-2 border-dashed border-[#1b2021] text-center space-y-2">
+                      <p className="font-mono text-xs text-[#1b2021]">
                         Logging daily symptoms helps Gemini AI build precise personalized recommendations for your health.
                       </p>
                       <button
                         id="today-quick-log-btn"
                         onClick={() => handleOpenLogModalForDate(todayStr)}
-                        className="text-xs font-bold font-sans uppercase tracking-wider text-[#d97d6e] hover:underline cursor-pointer"
+                        className="font-mono text-xs font-bold uppercase text-[#f07167] hover:underline cursor-pointer"
                       >
                         Click here to record flow, mood, and symptoms
                       </button>
@@ -245,26 +253,26 @@ export default function App() {
                 </div>
 
                 {/* AI Feature Nudge Card */}
-                <div className="bg-[#7c8363] text-white p-6 sm:p-8 rounded-[32px] shadow-sm space-y-4 flex flex-col justify-between">
+                <div className="neo-border-4 bg-[#0081a7] text-white p-6 sm:p-8 neo-shadow flex flex-col justify-between space-y-4">
                   <div className="space-y-3">
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                      <Sparkles className="w-5 h-5 text-amber-200" />
+                    <div className="w-10 h-10 border-2 border-[#1b2021] bg-white flex items-center justify-center text-[#1b2021] neo-shadow-sm">
+                      <Sparkles className="w-5 h-5 text-[#f07167]" />
                     </div>
-                    <h4 className="text-2xl font-serif text-[#fdfaf5]">
+                    <h4 className="text-2xl font-extrabold text-white">
                       Today's Phase AI Insights
                     </h4>
-                    <p className="text-xs text-[#fdfaf5]/90 font-sans leading-relaxed">
-                      Your estrogen & progesterone levels guide optimal nutrition, movement, and mood strategies for today.
+                    <p className="font-mono text-xs text-white/90 leading-relaxed">
+                      Your estrogen &amp; progesterone levels guide optimal nutrition, movement, and mood strategies for today.
                     </p>
                   </div>
 
                   <button
                     id="today-view-ai-insights-btn"
                     onClick={() => setActiveTab('ai')}
-                    className="w-full py-3 rounded-full bg-white text-[#7c8363] hover:bg-[#fdfaf5] text-xs font-sans font-bold uppercase tracking-widest shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="neo-btn bg-white text-[#1b2021] w-full py-3 text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Sparkles className="w-4 h-4 text-[#d97d6e]" />
-                    Read Full Report
+                    <Sparkles className="w-4 h-4 text-[#f07167]" />
+                    READ FULL REPORT
                   </button>
                 </div>
               </div>

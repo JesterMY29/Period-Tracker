@@ -17,6 +17,7 @@ const QUICK_PROMPTS = [
   "What type of workouts are best during my follicular phase?",
   "How does sleep impact cycle regularity and hormones?",
   "What foods help boost energy during menstruation?",
+  "What activities can help me during period cramps?"
 ];
 
 export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
@@ -36,7 +37,7 @@ export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
     {
       id: '1',
       sender: 'ai',
-      text: `Hello ${settings.userName || 'there'}! I am Aura, your personal AI cycle health assistant. You are currently on Day ${cycleDay} of your ${currentPhase} phase. How can I support your wellness today?`,
+      text: `Hello & hi ${settings.userName || 'there'}! I am Jester, your personal AI for everything assistant. You are currently on Day ${cycleDay} of your ${currentPhase} phase. How can I support your wellness today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -286,11 +287,11 @@ export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
         <div className="flex items-center justify-between border-b-2 border-[#1b2021] pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 border-2 border-[#1b2021] bg-[#f07167] text-white flex items-center justify-center font-hand font-bold text-2xl neo-shadow-sm">
-              A
+              J
             </div>
             <div>
               <h3 className="text-xl font-extrabold text-[#1b2021] tracking-tight">
-                Ask Aura - Your AI Health Specialist
+                Ask Jester - Your AI Health Specialist
               </h3>
               <p className="font-mono text-xs text-[#0081a7]">
                 Inquire about period symptoms, hormonal nutrition, or cycle phases.
@@ -343,7 +344,7 @@ export const AIInsightsTab: React.FC<AIInsightsTabProps> = ({
           {sendingChat && (
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#0081a7] bg-white p-3 border-2 border-[#1b2021] w-fit">
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#f07167]" />
-              Aura is processing...
+              Jester is processing...
             </div>
           )}
         </div>
