@@ -77,7 +77,15 @@ Guidelines:
     console.error('[AI CHAT DEBUG] Error name:', error?.name);
     console.error('[AI CHAT DEBUG] Error status:', error?.status);
     console.error('[AI CHAT DEBUG] Error message:', error?.message);
-    console.error('[AI CHAT DEBUG] Error body:', JSON.stringify(error?.error ?? null));
+    console.error('[AI CHAT DEBUG] Error statusText:', error?.statusText);
+    console.error('[AI CHAT DEBUG] Error cause:', error?.cause);
+    console.error('[AI CHAT DEBUG] Error error:', error?.error);
+    console.error('[AI CHAT DEBUG] Error response:', error?.response);
+    try {
+      console.error('[AI CHAT DEBUG] Error serialized:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    } catch (_e) {
+      console.error('[AI CHAT DEBUG] Could not serialize error object');
+    }
     return res.status(500).json({
       error: 'Gemini request failed',
       debug: true,
