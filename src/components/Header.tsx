@@ -1,141 +1,142 @@
 import React from 'react';
-import { Calendar, Sparkles, BarChart2, Settings, Plus, Compass } from 'lucide-react';
-import { CyclePhase } from '../types';
+import { Home, Calendar, History, Settings, Plus, Lock } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'today' | 'calendar' | 'ai' | 'analytics' | 'settings';
-  setActiveTab: (tab: 'today' | 'calendar' | 'ai' | 'analytics' | 'settings') => void;
+  activeTab: 'home' | 'calendar' | 'history' | 'settings';
+  setActiveTab: (tab: 'home' | 'calendar' | 'history' | 'settings') => void;
   onOpenLogModal: () => void;
-  cycleDay: number;
-  currentPhase: CyclePhase;
-  daysUntilNextPeriod: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onOpenLogModal,
-  cycleDay,
-  currentPhase,
-  daysUntilNextPeriod,
 }) => {
   return (
-    <header className="sticky top-0 z-30 bg-[#fffbf2]/95 backdrop-blur-md pt-4 pb-2 px-2 sm:px-6 max-w-7xl mx-auto">
-      <nav className="neo-border-4 bg-white px-4 sm:px-6 py-3 neo-shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Logo & Status Indicators */}
-        <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto justify-between md:justify-start flex-wrap">
-          <span className="font-hand font-bold text-3xl sm:text-4xl text-[#0081a7] leading-none">
-            AuraCycle.io
-          </span>
-
-          <div className="h-6 w-0.5 bg-[#1b2021] hidden sm:block" />
-
-          {/* Status Badge */}
-          <div className="border-2 border-[#1b2021] bg-[#0081a7] text-white px-3 py-1 font-mono text-xs font-extrabold uppercase tracking-wide flex items-center gap-1.5 neo-shadow-sm">
-            <span>DAY {cycleDay} • {currentPhase}</span>
+    <header className="bg-[#f8f7f4] border-b border-[#1a1a1a]/10 sticky top-0 z-30 backdrop-blur-xs">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Brand */}
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+            <h1 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-[#1a1a1a]">
+              AuraCycle
+            </h1>
+            <span className="font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 bg-[#1a1a1a] text-[#f8f7f4] rounded-xs font-medium inline-flex items-center gap-1">
+              <Lock className="w-2.5 h-2.5" /> Private &amp; Local
+            </span>
           </div>
 
-          <div className="h-6 w-0.5 bg-[#1b2021] hidden lg:block" />
-
-          {/* Next Period Info */}
-          <p className="text-xs font-mono font-bold text-[#1b2021] hidden lg:block uppercase tracking-tight">
-            {daysUntilNextPeriod > 0
-              ? `NEXT_PERIOD: IN_${daysUntilNextPeriod}_DAYS`
-              : daysUntilNextPeriod === 0
-              ? 'PERIOD: TODAY'
-              : `PERIOD_DAY_${Math.abs(daysUntilNextPeriod)}`}
-          </p>
-
-          {/* Quick Log Action on Mobile */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
             <button
-              id="header-quick-log-mobile-btn"
-              onClick={onOpenLogModal}
-              className="neo-btn bg-[#f07167] text-white text-xs px-3 py-1.5 flex items-center gap-1 cursor-pointer"
+              onClick={() => setActiveTab('home')}
+              className={`font-mono text-xs uppercase tracking-widest py-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'home'
+                  ? 'text-[#1a1a1a] font-semibold border-b-2 border-[#1a1a1a]'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
             >
-              <Plus className="w-4 h-4" /> Log
+              <Home className="w-3.5 h-3.5" />
+              Home
+            </button>
+
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`font-mono text-xs uppercase tracking-widest py-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'calendar'
+                  ? 'text-[#1a1a1a] font-semibold border-b-2 border-[#1a1a1a]'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Calendar
+            </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`font-mono text-xs uppercase tracking-widest py-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'history'
+                  ? 'text-[#1a1a1a] font-semibold border-b-2 border-[#1a1a1a]'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              History
+            </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`font-mono text-xs uppercase tracking-widest py-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'settings'
+                  ? 'text-[#1a1a1a] font-semibold border-b-2 border-[#1a1a1a]'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Settings
+            </button>
+
+            <button
+              onClick={onOpenLogModal}
+              className="bg-[#c47c7c] text-[#f8f7f4] px-4 py-2 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer ml-2"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Log Today
+            </button>
+          </nav>
+
+          {/* Mobile Log Button */}
+          <div className="md:hidden">
+            <button
+              onClick={onOpenLogModal}
+              className="bg-[#c47c7c] text-[#f8f7f4] px-3 py-1.5 font-mono text-xs uppercase tracking-wider font-medium flex items-center gap-1 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Log
             </button>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <div className="flex items-center gap-2 font-mono text-xs font-bold overflow-x-auto no-scrollbar w-full md:w-auto justify-start md:justify-end pb-1 md:pb-0">
+        {/* Mobile Navigation Bar */}
+        <div className="flex md:hidden border-t border-[#1a1a1a]/10 py-2 justify-around">
           <button
-            id="nav-tab-today"
-            onClick={() => setActiveTab('today')}
-            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'today'
-                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
+            onClick={() => setActiveTab('home')}
+            className={`font-mono text-[11px] uppercase tracking-wider py-1 flex items-center gap-1 cursor-pointer ${
+              activeTab === 'home' ? 'text-[#1a1a1a] font-bold border-b border-[#1a1a1a]' : 'text-[#1a1a1a]/60'
             }`}
           >
-            <Compass className="w-4 h-4 text-[#0081a7]" />
-            Today
+            <Home className="w-3.5 h-3.5" />
+            Home
           </button>
-
           <button
-            id="nav-tab-calendar"
             onClick={() => setActiveTab('calendar')}
-            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'calendar'
-                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
+            className={`font-mono text-[11px] uppercase tracking-wider py-1 flex items-center gap-1 cursor-pointer ${
+              activeTab === 'calendar' ? 'text-[#1a1a1a] font-bold border-b border-[#1a1a1a]' : 'text-[#1a1a1a]/60'
             }`}
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-3.5 h-3.5" />
             Calendar
           </button>
-
           <button
-            id="nav-tab-ai"
-            onClick={() => setActiveTab('ai')}
-            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'ai'
-                ? 'bg-[#f07167] text-white neo-shadow-sm'
-                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
+            onClick={() => setActiveTab('history')}
+            className={`font-mono text-[11px] uppercase tracking-wider py-1 flex items-center gap-1 cursor-pointer ${
+              activeTab === 'history' ? 'text-[#1a1a1a] font-bold border-b border-[#1a1a1a]' : 'text-[#1a1a1a]/60'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-[#f07167]" />
-            AI Insights
+            <History className="w-3.5 h-3.5" />
+            History
           </button>
-
           <button
-            id="nav-tab-analytics"
-            onClick={() => setActiveTab('analytics')}
-            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'analytics'
-                ? 'bg-[#fed9b7] text-[#1b2021] neo-shadow-sm'
-                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
-            }`}
-          >
-            <BarChart2 className="w-4 h-4" />
-            Trends
-          </button>
-
-          <button
-            id="nav-tab-settings"
             onClick={() => setActiveTab('settings')}
-            className={`px-3 py-2 border-2 border-[#1b2021] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'settings'
-                ? 'bg-[#0081a7] text-white neo-shadow-sm'
-                : 'bg-white text-[#1b2021] hover:bg-[#fffbf2]'
+            className={`font-mono text-[11px] uppercase tracking-wider py-1 flex items-center gap-1 cursor-pointer ${
+              activeTab === 'settings' ? 'text-[#1a1a1a] font-bold border-b border-[#1a1a1a]' : 'text-[#1a1a1a]/60'
             }`}
-            title="Settings"
           >
-            <Settings className="w-4 h-4" />
-            Config
-          </button>
-
-          <button
-            id="header-quick-log-btn"
-            onClick={onOpenLogModal}
-            className="hidden md:flex neo-btn bg-[#f07167] text-white text-xs px-3.5 py-2 items-center gap-1.5 cursor-pointer ml-1"
-          >
-            <Plus className="w-4 h-4" /> LOG ENTRY
+            <Settings className="w-3.5 h-3.5" />
+            Settings
           </button>
         </div>
-      </nav>
+      </div>
     </header>
   );
 };
-

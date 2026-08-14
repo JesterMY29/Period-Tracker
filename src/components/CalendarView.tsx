@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { DayLog, CycleSettings } from '../types';
-import { getCycleDetails, formatDate, addDays, getDaysDifference } from '../lib/cycleUtils';
-import { ChevronLeft, ChevronRight, Plus, Droplets, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  formatDate,
+  getPrediction,
+} from '../lib/cycleUtils';
 
 interface CalendarViewProps {
   logs: DayLog[];
@@ -14,19 +17,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   settings,
   onSelectDate,
 }) => {
-  const [currentMonthDate, setCurrentMonthDate] = useState(() => new Date());
+  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(() => new Date());
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
-
-  const firstDayOfMonth = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sun
-
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
 
   const handlePrevMonth = () => {
     setCurrentMonthDate(new Date(year, month - 1, 1));
@@ -36,220 +30,205 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     setCurrentMonthDate(new Date(year, month + 1, 1));
   };
 
-  const handleToday = () => {
+  const handleTodayMonth = () => {
     setCurrentMonthDate(new Date());
   };
 
-  const logsByDate = new Map<string, DayLog>();
-  logs.forEach(l => logsByDate.set(l.date, l));
-
   const todayStr = formatDate(new Date());
+  const prediction = getPrediction(logs, settings);
 
-  // Build grid days
-  const gridCells = [];
-  
-  // Empty padding for preceding month days
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    gridCells.push(null);
-  }
+  // Generate calendar grid matrix
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Days of current month
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    const dateStr = formatDate(d);
-    
-    // Cycle predictions for this date
-    const cycleInfo = getCycleDetails(dateStr, settings.lastPeriodStartDate, settings.avgCycleLength);
-    const log = logsByDate.get(dateStr);
+  const calendarDays: Array<{ dateStr: string; isCurrentMonth: boolean; dayNum: number }> = [];
 
-    // Is logged period day?
-    const hasFlow = log && log.flow !== 'None';
-    
-    // Is predicted period day?
-    // Period starts at cycleInfo.currentCycleStart and lasts avgPeriodLength
-    const daysFromStart = getDaysDifference(cycleInfo.currentCycleStart, dateStr);
-    const isPredictedPeriod = daysFromStart >= 0 && daysFromStart < settings.avgPeriodLength && !hasFlow;
-
-    gridCells.push({
-      dayNumber: day,
-      dateStr,
-      log,
-      hasFlow,
-      isPredictedPeriod,
-      isFertileWindow: cycleInfo.isFertileWindow,
-      isOvulationDay: cycleInfo.isOvulationDay,
-      isToday: dateStr === todayStr,
-      cycleDay: cycleInfo.cycleDay,
+  // Previous month padding
+  const prevMonthLastDate = new Date(year, month, 0).getDate();
+  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    const pDate = new Date(year, month - 1, prevMonthLastDate - i);
+    calendarDays.push({
+      dateStr: formatDate(pDate),
+      isCurrentMonth: false,
+      dayNum: pDate.getDate(),
     });
   }
 
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cDate = new Date(year, month, d);
+    calendarDays.push({
+      dateStr: formatDate(cDate),
+      isCurrentMonth: true,
+      dayNum: d,
+    });
+  }
+
+  // Next month padding to fill grid to multiple of 7
+  const totalGridCells = Math.ceil(calendarDays.length / 7) * 7;
+  const nextDaysNeeded = totalGridCells - calendarDays.length;
+  for (let n = 1; n <= nextDaysNeeded; n++) {
+    const nDate = new Date(year, month + 1, n);
+    calendarDays.push({
+      dateStr: formatDate(nDate),
+      isCurrentMonth: false,
+      dayNum: n,
+    });
+  }
+
+  const monthLabel = currentMonthDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
   return (
-    <div className="neo-border-4 bg-white p-6 sm:p-10 neo-shadow space-y-6">
-      {/* Calendar Header Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b-2 border-[#1b2021]">
-        <div>
-          <span className="font-mono text-xs font-bold text-[#0081a7] uppercase tracking-widest block">
-            MONTHLY SCHEDULE
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1b2021] tracking-tight">
-            {monthNames[month]} {year}
-          </h2>
+    <div className="space-y-6 font-mono">
+      {/* Calendar Header Control */}
+      <div className="card-refined p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 border border-[#1a1a1a]/10 bg-[#f8f7f4] text-[#1a1a1a]">
+            <CalendarIcon className="w-5 h-5 text-[#c47c7c]" />
+          </div>
+          <div>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
+              [02] Monthly View
+            </span>
+            <h2 className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">
+              {monthLabel}
+            </h2>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            id="calendar-today-btn"
-            onClick={handleToday}
-            className="neo-btn bg-[#0081a7] text-white px-4 py-2 text-xs cursor-pointer"
+            onClick={handlePrevMonth}
+            className="p-2 border border-[#1a1a1a]/15 bg-white text-xs hover:border-[#1a1a1a] transition-colors cursor-pointer"
+            title="Previous Month"
           >
-            Today
+            <ChevronLeft className="w-4 h-4 text-[#1a1a1a]" />
           </button>
-          <div className="flex items-center gap-1 border-2 border-[#1b2021] bg-[#fffbf2] p-1">
-            <button
-              id="calendar-prev-month-btn"
-              onClick={handlePrevMonth}
-              className="p-1.5 hover:bg-[#fed9b7] text-[#1b2021] transition-all cursor-pointer font-bold"
-              title="Previous Month"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              id="calendar-next-month-btn"
-              onClick={handleNextMonth}
-              className="p-1.5 hover:bg-[#fed9b7] text-[#1b2021] transition-all cursor-pointer font-bold"
-              title="Next Month"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <button
+            onClick={handleTodayMonth}
+            className="px-3 py-1.5 border border-[#1a1a1a]/15 bg-[#f8f7f4] font-mono text-xs uppercase tracking-wider hover:border-[#1a1a1a] cursor-pointer"
+          >
+            TODAY
+          </button>
+          <button
+            onClick={handleNextMonth}
+            className="p-2 border border-[#1a1a1a]/15 bg-white text-xs hover:border-[#1a1a1a] transition-colors cursor-pointer"
+            title="Next Month"
+          >
+            <ChevronRight className="w-4 h-4 text-[#1a1a1a]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Visual Legend */}
+      <div className="card-refined p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <span className="text-[#c47c7c] uppercase text-[10px] tracking-widest">[LEGEND]</span>
+        <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#1a1a1a]/80">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-[#c47c7c]" />
+            <span>LOGGED PERIOD DAY</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-[#c47c7c]/15 border border-dashed border-[#c47c7c]" />
+            <span>PREDICTED WINDOW</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-[#1a1a1a]/10 border border-[#1a1a1a]/20" />
+            <span>OTHER LOGGED DAY</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-[#1a1a1a] rounded-full" />
+            <span>CURRENT DAY</span>
           </div>
         </div>
       </div>
 
-      {/* Legend Bar */}
-      <div className="flex flex-wrap items-center gap-6 font-mono text-xs font-bold text-[#1b2021] p-4 bg-[#fffbf2] border-2 border-[#1b2021] neo-shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-[#f07167] border-2 border-[#1b2021] inline-block" />
-          Logged Period
+      {/* Calendar Grid */}
+      <div className="card-refined overflow-hidden">
+        {/* Days of Week Header */}
+        <div className="grid grid-cols-7 bg-[#1a1a1a] text-[#f8f7f4] text-center py-2.5 text-xs font-mono tracking-widest border-b border-[#1a1a1a]/10">
+          <div>SUN</div>
+          <div>MON</div>
+          <div>TUE</div>
+          <div>WED</div>
+          <div>THU</div>
+          <div>FRI</div>
+          <div>SAT</div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-[#fed9b7] border-2 border-dashed border-[#1b2021] inline-block" />
-          Predicted Period
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-[#0081a7] border-2 border-[#1b2021] inline-block" />
-          Fertile Window
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-emerald-400 border-2 border-[#1b2021] inline-block" />
-          Ovulation Day
-        </div>
-      </div>
 
-      {/* Weekday Header */}
-      <div className="grid grid-cols-7 gap-2 text-center font-mono text-xs font-extrabold text-[#1b2021] uppercase tracking-widest pb-2">
-        <div>Sun</div>
-        <div>Mon</div>
-        <div>Tue</div>
-        <div>Wed</div>
-        <div>Thu</div>
-        <div>Fri</div>
-        <div>Sat</div>
-      </div>
+        {/* Date Cells */}
+        <div className="grid grid-cols-7 border-t border-[#1a1a1a]/10">
+          {calendarDays.map(({ dateStr, isCurrentMonth, dayNum }, idx) => {
+            const isToday = dateStr === todayStr;
+            const log = logs.find(l => l.date === dateStr);
+            const isPeriodDay = log && log.flow && log.flow !== 'None';
+            const isOtherLoggedDay = log && (!log.flow || log.flow === 'None') && ((log.symptoms && log.symptoms.length > 0) || log.mood || log.notes);
 
-      {/* Grid of Days */}
-      <div className="grid grid-cols-7 gap-2">
-        {gridCells.map((cell, idx) => {
-          if (!cell) {
-            return <div key={`empty-${idx}`} className="h-20 sm:h-24 bg-transparent" />;
-          }
+            const isPredictedWindow =
+              prediction &&
+              dateStr >= prediction.predictedWindowStart &&
+              dateStr <= prediction.predictedWindowEnd;
 
-          const {
-            dayNumber,
-            dateStr,
-            log,
-            hasFlow,
-            isPredictedPeriod,
-            isFertileWindow,
-            isOvulationDay,
-            isToday,
-          } = cell;
+            // Determine cell background & styling
+            let cellStyle = 'bg-white text-[#1a1a1a] hover:bg-[#f8f7f4]';
 
-          let bgStyle = 'bg-[#fffbf2] border-[#1b2021] hover:bg-[#fed9b7]';
-          if (hasFlow) {
-            bgStyle = 'bg-[#f07167] text-white border-[#1b2021]';
-          } else if (isOvulationDay) {
-            bgStyle = 'bg-emerald-300 text-[#1b2021] border-[#1b2021]';
-          } else if (isFertileWindow) {
-            bgStyle = 'bg-[#0081a7]/20 border-[#1b2021]';
-          } else if (isPredictedPeriod) {
-            bgStyle = 'bg-[#fed9b7]/60 border-dashed border-[#1b2021]';
-          }
+            if (!isCurrentMonth) {
+              cellStyle = 'bg-[#f8f7f4]/40 text-[#1a1a1a]/30';
+            } else if (isPeriodDay) {
+              cellStyle = 'bg-[#c47c7c] text-[#f8f7f4] font-medium';
+            } else if (isPredictedWindow) {
+              cellStyle = 'bg-[#c47c7c]/15 text-[#c47c7c] border border-dashed border-[#c47c7c] font-medium';
+            } else if (isOtherLoggedDay) {
+              cellStyle = 'bg-[#1a1a1a]/5 text-[#1a1a1a] font-medium';
+            }
 
-          return (
-            <div
-              key={dateStr}
-              onClick={() => onSelectDate(dateStr)}
-              className={`relative h-20 sm:h-24 p-2 border-2 transition-all cursor-pointer flex flex-col justify-between group ${bgStyle} ${
-                isToday ? 'ring-4 ring-[#1b2021] font-bold neo-shadow-sm' : ''
-              }`}
-            >
-              {/* Top Row: Date & Status Badge */}
-              <div className="flex items-center justify-between">
-                <span
-                  className={`font-mono text-xs font-bold ${
-                    isToday
-                      ? 'bg-[#1b2021] text-white px-1.5 py-0.5 border border-[#1b2021]'
-                      : 'text-[#1b2021]'
-                  }`}
-                >
-                  {dayNumber}
-                </span>
-
-                {hasFlow && (
-                  <span className="flex items-center text-[9px] font-mono font-bold px-1.5 py-0.5 bg-[#1b2021] text-white border border-[#1b2021]">
-                    <Droplets className="w-2.5 h-2.5 mr-0.5 text-[#f07167]" />
-                    {log?.flow}
+            return (
+              <button
+                key={`${dateStr}-${idx}`}
+                onClick={() => onSelectDate(dateStr)}
+                className={`min-h-[75px] sm:min-h-[88px] p-2 border-b border-r border-[#1a1a1a]/10 flex flex-col justify-between transition-all cursor-pointer relative text-left ${cellStyle}`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span
+                    className={`text-xs sm:text-sm font-mono ${
+                      isToday ? 'w-5 h-5 rounded-full bg-[#1a1a1a] text-[#f8f7f4] flex items-center justify-center font-bold text-[11px]' : ''
+                    }`}
+                  >
+                    {dayNum}
                   </span>
-                )}
 
-                {isOvulationDay && !hasFlow && (
-                  <span className="text-[9px] font-mono font-bold px-1 py-0.5 bg-[#1b2021] text-emerald-300">
-                    OVU
-                  </span>
-                )}
-              </div>
-
-              {/* Middle / Bottom Badges for Symptoms and Moods */}
-              <div className="space-y-1">
-                {log && (
-                  <div className="flex flex-wrap gap-1 max-h-8 overflow-hidden">
-                    {log.symptoms.map((s, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className="text-[8px] font-mono font-bold px-1 py-0.5 bg-white text-[#1b2021] border border-[#1b2021] truncate max-w-[50px]"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {isPredictedPeriod && !hasFlow && (
-                  <p className="text-[9px] font-mono text-[#1b2021] font-bold uppercase">
-                    Pred
-                  </p>
-                )}
-              </div>
-
-              {/* Hover Plus Icon */}
-              <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-5 h-5 bg-[#1b2021] text-white flex items-center justify-center font-bold">
-                  <Plus className="w-3 h-3" />
+                  {isToday && (
+                    <span className="hidden sm:inline-block text-[8px] uppercase tracking-widest px-1 bg-[#1a1a1a] text-[#f8f7f4]">
+                      TODAY
+                    </span>
+                  )}
                 </div>
-              </div>
-            </div>
-          );
-        })}
+
+                {/* Status Badges */}
+                <div className="space-y-1 mt-1">
+                  {isPeriodDay && (
+                    <div className="text-[9px] uppercase tracking-wider font-mono font-medium px-1 bg-white/20 text-[#f8f7f4] truncate">
+                      {log.flow}
+                    </div>
+                  )}
+
+                  {isOtherLoggedDay && (
+                    <div className="text-[9px] uppercase tracking-wider font-mono font-medium px-1 bg-[#1a1a1a] text-[#f8f7f4] truncate">
+                      Log
+                    </div>
+                  )}
+
+                  {isPredictedWindow && !isPeriodDay && (
+                    <div className="text-[8px] uppercase tracking-wider font-mono font-medium px-1 bg-[#c47c7c] text-[#f8f7f4] truncate">
+                      Predicted
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
