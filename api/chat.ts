@@ -69,9 +69,8 @@ Guidelines:
     return res.status(200).json({
       answer: response.text || getFallbackChatAnswer(question, currentContext),
     });
-  } catch (_error) {
-    return res.status(200).json({
-      answer: getFallbackChatAnswer(question, currentContext),
-    });
+  } catch (error) {
+    console.error('[AI CHAT] Gemini request failed:', error);
+    return res.status(500).json({ error: 'Gemini request failed', debug: true });
   }
 }
