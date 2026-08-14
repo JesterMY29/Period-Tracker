@@ -21,7 +21,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('[AI CHAT DEBUG] Initializing Gemini client');
     const ai = getGeminiAI();
+    console.log('[AI CHAT DEBUG] Gemini client:', ai ? 'initialized' : 'NULL');
     if (!ai) {
       return res.status(200).json({
         answer: getFallbackChatAnswer(question, currentContext),
@@ -57,6 +59,7 @@ Guidelines:
       parts: [{ text: question }],
     });
 
+    console.log('[AI CHAT DEBUG] Calling Gemini generateContent');
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: chatContents,
@@ -65,12 +68,13 @@ Guidelines:
         temperature: 0.7,
       },
     });
+    console.log('[AI CHAT DEBUG] Gemini generateContent succeeded');
 
     return res.status(200).json({
       answer: response.text || getFallbackChatAnswer(question, currentContext),
     });
   } catch (error) {
-    console.error('[AI CHAT] Gemini request failed:', error);
+    console.error('[AI CHAT DEBUG] Gemini generateContent failed:', error);
     return res.status(500).json({ error: 'Gemini request failed', debug: true });
   }
 }
