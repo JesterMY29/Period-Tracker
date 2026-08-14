@@ -61,11 +61,10 @@ Guidelines:
 
     console.log('[AI CHAT DEBUG] Calling Gemini generateContent');
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: chatContents,
       config: {
         systemInstruction,
-        temperature: 0.7,
       },
     });
     console.log('[AI CHAT DEBUG] Gemini generateContent succeeded');
@@ -73,8 +72,15 @@ Guidelines:
     return res.status(200).json({
       answer: response.text || getFallbackChatAnswer(question, currentContext),
     });
-  } catch (error) {
-    console.error('[AI CHAT DEBUG] Gemini generateContent failed:', error);
-    return res.status(500).json({ error: 'Gemini request failed', debug: true });
+  } catch (error: any) {
+    console.error('[AI CHAT DEBUG] Gemini generateContent failed');
+    console.error('[AI CHAT DEBUG] Error name:', error?.name);
+    console.error('[AI CHAT DEBUG] Error status:', error?.status);
+    console.error('[AI CHAT DEBUG] Error message:', error?.message);
+    console.error('[AI CHAT DEBUG] Error body:', JSON.stringify(error?.error ?? null));
+    return res.status(500).json({
+      error: 'Gemini request failed',
+      debug: true,
+    });
   }
 }
