@@ -40,23 +40,20 @@ test('one missed calendar day stays inside the same period episode', () => {
   const periods = detectPeriods([
     log('2026-01-01'),
     log('2026-01-03'),
-    log('2026-01-30'),
   ]);
 
-  assert.equal(periods.length, 2);
+  assert.equal(periods.length, 1);
   assert.deepEqual(periods[0], {
     startDate: '2026-01-01',
     endDate: '2026-01-03',
     length: 3,
   });
-  assert.equal(periods[1].startDate, '2026-01-30');
 });
 
-test('two missed calendar days separate period episodes', () => {
+test('two missed calendar days start a new period episode', () => {
   const periods = detectPeriods([
     log('2026-01-01'),
     log('2026-01-04'),
-    log('2026-01-30'),
   ]);
 
   assert.equal(periods.length, 2);
@@ -65,7 +62,30 @@ test('two missed calendar days separate period episodes', () => {
     endDate: '2026-01-01',
     length: 1,
   });
-  assert.equal(periods[1].startDate, '2026-01-04');
+  assert.deepEqual(periods[1], {
+    startDate: '2026-01-04',
+    endDate: '2026-01-04',
+    length: 1,
+  });
+});
+
+test('separate episodes still produce separate completed cycles', () => {
+  const logs = [
+    log('2026-01-01'),
+    log('2026-01-04'),
+    log('2026-01-30'),
+  ];
+
+  const periods = detectPeriods(logs);
+  const cycles = getCompletedCycles(logs);
+
+  assert.equal(periods.length, 3);
+  assert.deepEqual(periods.map(period => period.startDate), [
+    '2026-01-01',
+    '2026-01-04',
+    '2026-01-30',
+  ]);
+  assert.deepEqual(cycles.map(cycle => cycle.length), [3, 26]);
 });
 
 test('long gaps are preserved rather than fabricated into extra cycles', () => {
