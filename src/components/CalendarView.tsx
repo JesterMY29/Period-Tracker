@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayLog, CycleSettings } from '../types';
-import {
-  formatDate,
-  getPrediction,
-} from '../lib/cycleUtils';
+import { formatDate, getPrediction } from '../lib/cycleUtils';
 
 interface CalendarViewProps {
   logs: DayLog[];
@@ -12,224 +9,120 @@ interface CalendarViewProps {
   onSelectDate: (dateStr: string) => void;
 }
 
-export const CalendarView: React.FC<CalendarViewProps> = ({
-  logs,
-  settings,
-  onSelectDate,
-}) => {
+export const CalendarView: React.FC<CalendarViewProps> = ({ logs, settings, onSelectDate }) => {
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(() => new Date());
-
-  const year = currentMonthDate.getFullYear();
-  const month = currentMonthDate.getMonth();
-
-  const handlePrevMonth = () => {
-    setCurrentMonthDate(new Date(year, month - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonthDate(new Date(year, month + 1, 1));
-  };
-
-  const handleTodayMonth = () => {
-    setCurrentMonthDate(new Date());
-  };
-
   const todayStr = formatDate(new Date());
   const prediction = getPrediction(logs, settings);
 
-  // Generate calendar grid matrix
-  const firstDayOfMonth = new Date(year, month, 1);
-  const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sun
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const calendarDays: Array<{ dateStr: string; isCurrentMonth: boolean; dayNum: number }> = [];
-
-  // Previous month padding
-  const prevMonthLastDate = new Date(year, month, 0).getDate();
-  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-    const pDate = new Date(year, month - 1, prevMonthLastDate - i);
-    calendarDays.push({
-      dateStr: formatDate(pDate),
-      isCurrentMonth: false,
-      dayNum: pDate.getDate(),
-    });
-  }
-
-  // Current month days
-  for (let d = 1; d <= daysInMonth; d++) {
-    const cDate = new Date(year, month, d);
-    calendarDays.push({
-      dateStr: formatDate(cDate),
-      isCurrentMonth: true,
-      dayNum: d,
-    });
-  }
-
-  // Next month padding to fill grid to multiple of 7
-  const totalGridCells = Math.ceil(calendarDays.length / 7) * 7;
-  const nextDaysNeeded = totalGridCells - calendarDays.length;
-  for (let n = 1; n <= nextDaysNeeded; n++) {
-    const nDate = new Date(year, month + 1, n);
-    calendarDays.push({
-      dateStr: formatDate(nDate),
-      isCurrentMonth: false,
-      dayNum: n,
-    });
-  }
-
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth();
   const monthLabel = currentMonthDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
+  const moveMonth = (offset: number) => setCurrentMonthDate(new Date(year, month + offset, 1));
+  const goToToday = () => setCurrentMonthDate(new Date());
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const previousMonthDays = new Date(year, month, 0).getDate();
+  const calendarDays: Array<{ dateStr: string; isCurrentMonth: boolean; dayNum: number }> = [];
+
+  for (let i = firstDay - 1; i >= 0; i -= 1) {
+    const date = new Date(year, month - 1, previousMonthDays - i);
+    calendarDays.push({ dateStr: formatDate(date), isCurrentMonth: false, dayNum: date.getDate() });
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    calendarDays.push({ dateStr: formatDate(date), isCurrentMonth: true, dayNum: day });
+  }
+
+  const totalCells = Math.ceil(calendarDays.length / 7) * 7;
+  for (let day = 1; calendarDays.length < totalCells; day += 1) {
+    const date = new Date(year, month + 1, day);
+    calendarDays.push({ dateStr: formatDate(date), isCurrentMonth: false, dayNum: day });
+  }
+
   return (
-    <div className="space-y-6 font-mono">
-      {/* Calendar Header Control */}
-      <div className="card-refined p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 border border-[#1a1a1a]/10 bg-[#f8f7f4] text-[#1a1a1a]">
-            <CalendarIcon className="w-5 h-5 text-[#c47c7c]" />
+    <div className="space-y-5 sm:space-y-6 font-sans">
+      <section className="card-refined p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 border border-[#1a1a1a]/10 bg-[#f8f7f4]">
+              <CalendarDays className="w-5 h-5 text-[#c47c7c]" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Calendar</p>
+              <h1 className="font-serif text-2xl sm:text-3xl mt-1">{monthLabel}</h1>
+            </div>
           </div>
-          <div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-              [02] Monthly View
-            </span>
-            <h2 className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">
-              {monthLabel}
-            </h2>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrevMonth}
-            className="p-2 border border-[#1a1a1a]/15 bg-white text-xs hover:border-[#1a1a1a] transition-colors cursor-pointer"
-            title="Previous Month"
-          >
-            <ChevronLeft className="w-4 h-4 text-[#1a1a1a]" />
-          </button>
-          <button
-            onClick={handleTodayMonth}
-            className="px-3 py-1.5 border border-[#1a1a1a]/15 bg-[#f8f7f4] font-mono text-xs uppercase tracking-wider hover:border-[#1a1a1a] cursor-pointer"
-          >
-            TODAY
-          </button>
-          <button
-            onClick={handleNextMonth}
-            className="p-2 border border-[#1a1a1a]/15 bg-white text-xs hover:border-[#1a1a1a] transition-colors cursor-pointer"
-            title="Next Month"
-          >
-            <ChevronRight className="w-4 h-4 text-[#1a1a1a]" />
-          </button>
-        </div>
-      </div>
-
-      {/* Visual Legend */}
-      <div className="card-refined p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-        <span className="text-[#c47c7c] uppercase text-[10px] tracking-widest">[LEGEND]</span>
-        <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#1a1a1a]/80">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-[#c47c7c]" />
-            <span>LOGGED PERIOD DAY</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-[#c47c7c]/15 border border-dashed border-[#c47c7c]" />
-            <span>PREDICTED WINDOW</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-[#1a1a1a]/10 border border-[#1a1a1a]/20" />
-            <span>OTHER LOGGED DAY</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-[#1a1a1a] rounded-full" />
-            <span>CURRENT DAY</span>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button type="button" onClick={() => moveMonth(-1)} aria-label="Previous month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] cursor-pointer">
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button type="button" onClick={goToToday} className="px-3 py-2 border border-[#1a1a1a]/15 bg-[#f8f7f4] font-mono text-[10px] uppercase tracking-wider hover:border-[#1a1a1a] cursor-pointer">
+              Today
+            </button>
+            <button type="button" onClick={() => moveMonth(1)} aria-label="Next month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] cursor-pointer">
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+            </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Calendar Grid */}
-      <div className="card-refined overflow-hidden">
-        {/* Days of Week Header */}
-        <div className="grid grid-cols-7 bg-[#1a1a1a] text-[#f8f7f4] text-center py-2.5 text-xs font-mono tracking-widest border-b border-[#1a1a1a]/10">
-          <div>SUN</div>
-          <div>MON</div>
-          <div>TUE</div>
-          <div>WED</div>
-          <div>THU</div>
-          <div>FRI</div>
-          <div>SAT</div>
+      <section className="card-refined p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] text-[#1a1a1a]/70">
+          <span className="uppercase tracking-widest text-[#c47c7c]">Key</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]" /> Period logged</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]/15 border border-dashed border-[#c47c7c]" /> Predicted</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#1a1a1a]/10 border border-[#1a1a1a]/20" /> Other log</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#1a1a1a]" /> Today</span>
+        </div>
+      </section>
+
+      <section className="card-refined overflow-hidden">
+        <div className="grid grid-cols-7 bg-[#1a1a1a] text-[#f8f7f4] text-center py-2.5 font-mono text-[10px] tracking-widest">
+          {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => <div key={day}>{day}</div>)}
         </div>
 
-        {/* Date Cells */}
-        <div className="grid grid-cols-7 border-t border-[#1a1a1a]/10">
-          {calendarDays.map(({ dateStr, isCurrentMonth, dayNum }, idx) => {
+        <div className="grid grid-cols-7">
+          {calendarDays.map(({ dateStr, isCurrentMonth, dayNum }, index) => {
+            const log = logs.find(item => item.date === dateStr);
             const isToday = dateStr === todayStr;
-            const log = logs.find(l => l.date === dateStr);
-            const isPeriodDay = log && log.flow && log.flow !== 'None';
-            const isOtherLoggedDay = log && (!log.flow || log.flow === 'None') && ((log.symptoms && log.symptoms.length > 0) || log.mood || log.notes);
+            const isPeriodDay = Boolean(log && log.flow !== 'None');
+            const isOtherLoggedDay = Boolean(log && log.flow === 'None' && ((log.symptoms?.length ?? 0) > 0 || log.mood || log.notes));
+            const isPredicted = Boolean(prediction && dateStr >= prediction.predictedWindowStart && dateStr <= prediction.predictedWindowEnd);
 
-            const isPredictedWindow =
-              prediction &&
-              dateStr >= prediction.predictedWindowStart &&
-              dateStr <= prediction.predictedWindowEnd;
-
-            // Determine cell background & styling
-            let cellStyle = 'bg-white text-[#1a1a1a] hover:bg-[#f8f7f4]';
-
-            if (!isCurrentMonth) {
-              cellStyle = 'bg-[#f8f7f4]/40 text-[#1a1a1a]/30';
-            } else if (isPeriodDay) {
-              cellStyle = 'bg-[#c47c7c] text-[#f8f7f4] font-medium';
-            } else if (isPredictedWindow) {
-              cellStyle = 'bg-[#c47c7c]/15 text-[#c47c7c] border border-dashed border-[#c47c7c] font-medium';
-            } else if (isOtherLoggedDay) {
-              cellStyle = 'bg-[#1a1a1a]/5 text-[#1a1a1a] font-medium';
-            }
+            let background = 'bg-white hover:bg-[#f8f7f4] text-[#1a1a1a]';
+            if (!isCurrentMonth) background = 'bg-[#f8f7f4]/50 text-[#1a1a1a]/25';
+            else if (isPeriodDay) background = 'bg-[#c47c7c] text-[#f8f7f4]';
+            else if (isPredicted) background = 'bg-[#c47c7c]/10 text-[#c47c7c]';
+            else if (isOtherLoggedDay) background = 'bg-[#1a1a1a]/5 text-[#1a1a1a]';
 
             return (
               <button
-                key={`${dateStr}-${idx}`}
+                key={`${dateStr}-${index}`}
+                type="button"
                 onClick={() => onSelectDate(dateStr)}
-                className={`min-h-[75px] sm:min-h-[88px] p-2 border-b border-r border-[#1a1a1a]/10 flex flex-col justify-between transition-all cursor-pointer relative text-left ${cellStyle}`}
+                aria-label={`${dateStr}${isPeriodDay ? `, ${log?.flow} flow` : ''}${isPredicted ? ', predicted period window' : ''}`}
+                className={`min-h-[76px] sm:min-h-[94px] p-2 border-b border-r border-[#1a1a1a]/10 flex flex-col justify-between text-left transition-colors cursor-pointer ${background}`}
               >
-                <div className="flex items-center justify-between w-full">
-                  <span
-                    className={`text-xs sm:text-sm font-mono ${
-                      isToday ? 'w-5 h-5 rounded-full bg-[#1a1a1a] text-[#f8f7f4] flex items-center justify-center font-bold text-[11px]' : ''
-                    }`}
-                  >
+                <div className="flex items-start justify-between gap-1">
+                  <span className={isToday ? 'w-5 h-5 rounded-full bg-[#1a1a1a] text-[#f8f7f4] flex items-center justify-center font-bold text-[10px]' : 'font-mono text-xs'}>
                     {dayNum}
                   </span>
-
-                  {isToday && (
-                    <span className="hidden sm:inline-block text-[8px] uppercase tracking-widest px-1 bg-[#1a1a1a] text-[#f8f7f4]">
-                      TODAY
-                    </span>
-                  )}
+                  {isToday && <span className="hidden sm:inline font-mono text-[8px] uppercase tracking-wider">Today</span>}
                 </div>
 
-                {/* Status Badges */}
-                <div className="space-y-1 mt-1">
-                  {isPeriodDay && (
-                    <div className="text-[9px] uppercase tracking-wider font-mono font-medium px-1 bg-white/20 text-[#f8f7f4] truncate">
-                      {log.flow}
-                    </div>
-                  )}
-
-                  {isOtherLoggedDay && (
-                    <div className="text-[9px] uppercase tracking-wider font-mono font-medium px-1 bg-[#1a1a1a] text-[#f8f7f4] truncate">
-                      Log
-                    </div>
-                  )}
-
-                  {isPredictedWindow && !isPeriodDay && (
-                    <div className="text-[8px] uppercase tracking-wider font-mono font-medium px-1 bg-[#c47c7c] text-[#f8f7f4] truncate">
-                      Predicted
-                    </div>
-                  )}
+                <div className="space-y-1 mt-2">
+                  {isPeriodDay && <span className="block truncate px-1 py-0.5 bg-white/20 font-mono text-[8px] uppercase tracking-wider">{log?.flow}</span>}
+                  {isOtherLoggedDay && <span className="block truncate px-1 py-0.5 bg-[#1a1a1a] text-[#f8f7f4] font-mono text-[8px] uppercase tracking-wider">Logged</span>}
+                  {isPredicted && !isPeriodDay && <span className="block truncate px-1 py-0.5 bg-[#c47c7c] text-[#f8f7f4] font-mono text-[8px] uppercase tracking-wider">Predicted</span>}
                 </div>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
