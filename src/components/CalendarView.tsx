@@ -56,31 +56,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ logs, settings, onSe
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button type="button" onClick={() => moveMonth(-1)} aria-label="Previous month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] cursor-pointer">
+            <button type="button" onClick={() => moveMonth(-1)} aria-label="Previous month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] rounded-sm cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c47c7c]">
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </button>
-            <button type="button" onClick={goToToday} className="px-3 py-2 border border-[#1a1a1a]/15 bg-[#f8f7f4] font-mono text-[10px] uppercase tracking-wider hover:border-[#1a1a1a] cursor-pointer">
+            <button type="button" onClick={goToToday} className="px-3 py-2 border border-[#1a1a1a]/15 bg-[#f8f7f4] font-mono text-[10px] uppercase tracking-wider hover:border-[#1a1a1a] rounded-sm cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c47c7c]">
               Today
             </button>
-            <button type="button" onClick={() => moveMonth(1)} aria-label="Next month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] cursor-pointer">
+            <button type="button" onClick={() => moveMonth(1)} aria-label="Next month" className="p-2 border border-[#1a1a1a]/15 bg-white hover:border-[#1a1a1a] rounded-sm cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c47c7c]">
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       </section>
 
-      <section className="card-refined p-4 sm:p-5">
+      <section className="card-refined p-4 sm:p-5" aria-label="Calendar legend">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] text-[#1a1a1a]/70">
           <span className="uppercase tracking-widest text-[#c47c7c]">Key</span>
-          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]" /> Period logged</span>
-          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]/15 border border-dashed border-[#c47c7c]" /> Predicted</span>
-          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#1a1a1a]/10 border border-[#1a1a1a]/20" /> Other log</span>
-          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#1a1a1a]" /> Today</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]" aria-hidden="true" /> Period logged</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#c47c7c]/15 border border-dashed border-[#c47c7c]" aria-hidden="true" /> Predicted</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 bg-[#1a1a1a]/10 border border-[#1a1a1a]/20" aria-hidden="true" /> Other log</span>
+          <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#1a1a1a]" aria-hidden="true" /> Today</span>
         </div>
       </section>
 
-      <section className="card-refined overflow-hidden">
-        <div className="grid grid-cols-7 bg-[#1a1a1a] text-[#f8f7f4] text-center py-2.5 font-mono text-[10px] tracking-widest">
+      <section className="card-refined overflow-hidden" aria-label={`${monthLabel} cycle calendar`}>
+        <div className="grid grid-cols-7 bg-[#1a1a1a] text-[#f8f7f4] text-center py-2.5 font-mono text-[10px] tracking-widest" aria-hidden="true">
           {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => <div key={day}>{day}</div>)}
         </div>
 
@@ -98,13 +98,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ logs, settings, onSe
             else if (isPredicted) background = 'bg-[#c47c7c]/10 text-[#c47c7c]';
             else if (isOtherLoggedDay) background = 'bg-[#1a1a1a]/5 text-[#1a1a1a]';
 
+            const state = [
+              isPeriodDay ? `${log?.flow} flow` : '',
+              isPredicted ? 'predicted period window' : '',
+              isOtherLoggedDay ? 'other log' : '',
+              isToday ? 'today' : '',
+            ].filter(Boolean).join(', ');
+
             return (
               <button
                 key={`${dateStr}-${index}`}
                 type="button"
                 onClick={() => onSelectDate(dateStr)}
-                aria-label={`${dateStr}${isPeriodDay ? `, ${log?.flow} flow` : ''}${isPredicted ? ', predicted period window' : ''}`}
-                className={`min-h-[76px] sm:min-h-[94px] p-2 border-b border-r border-[#1a1a1a]/10 flex flex-col justify-between text-left transition-colors cursor-pointer ${background}`}
+                aria-label={`${dateStr}${state ? `, ${state}` : ''}`}
+                className={`min-h-[76px] sm:min-h-[94px] p-2 border-b border-r border-[#1a1a1a]/10 flex flex-col justify-between text-left transition-colors cursor-pointer rounded-none focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1a1a] ${background}`}
               >
                 <div className="flex items-start justify-between gap-1">
                   <span className={isToday ? 'w-5 h-5 rounded-full bg-[#1a1a1a] text-[#f8f7f4] flex items-center justify-center font-bold text-[10px]' : 'font-mono text-xs'}>
