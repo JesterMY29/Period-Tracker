@@ -78,7 +78,7 @@ export default function App() {
   const existingLog = logs.find(log => log.date === selectedLogDate);
 
   return (
-    <div className="min-h-screen bg-[#fdfaf5] text-[#2d2d2a] font-sans antialiased flex flex-col selection:bg-[#fed9b7]">
+    <div className="min-h-screen bg-[#f8f7f4] text-[#2d2d2a] font-sans antialiased flex flex-col selection:bg-[#fed9b7]">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onNavigateToCalendar={() => setActiveTab('calendar')} />}
@@ -87,12 +87,15 @@ export default function App() {
         {activeTab === 'settings' && <SettingsTab settings={settings} onUpdateSettings={setSettings} logs={logs} onImportLogs={handleImportLogs} onClearAllData={handleClearAllData} />}
       </main>
       <SymptomLoggerModal isOpen={isLoggerOpen} onClose={() => setIsLoggerOpen(false)} selectedDate={selectedLogDate} existingLog={existingLog} onSaveLog={handleSaveLog} onDeleteLog={handleDeleteLog} />
-      <footer className="max-w-6xl mx-auto px-4 sm:px-6 mt-12 pb-8 w-full font-mono text-xs text-[#1b2021]">
-        <div className="neo-border-4 bg-white p-4 sm:p-6 neo-shadow flex flex-col sm:flex-row items-center justify-between gap-4 font-bold">
-          <div className="flex flex-wrap items-center gap-3"><span>AuraCycle Private Tracker</span><span>•</span><span className="text-[#0081a7]">100% Offline &amp; Local</span></div>
-          <div>No AI • No Cloud • No Ads</div>
+      <footer className="max-w-6xl mx-auto px-4 sm:px-6 mt-8 sm:mt-12 pb-8 w-full">
+        <div className="card-faint p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">AuraCycle</p>
+            <p className="font-mono text-[10px] text-[#1a1a1a]/55 mt-1">Private, local cycle tracking. No account required.</p>
+          </div>
+          <p className="font-mono text-[10px] text-[#1a1a1a]/45">No AI • No Cloud • No Ads</p>
         </div>
-        <p className="text-[11px] text-[#1b2021]/60 text-center mt-3">Estimates are mathematical predictions based on recorded log entries and do not replace professional medical advice.</p>
+        <p className="text-[10px] text-[#1a1a1a]/45 text-center mt-3">Estimates are mathematical predictions based on recorded entries and do not replace professional medical advice.</p>
       </footer>
     </div>
   );
