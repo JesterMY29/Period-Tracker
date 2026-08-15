@@ -46,11 +46,13 @@ test('SPEC 04 — stable cycles produce a stable median baseline', () => {
 });
 
 test('SPEC 05 — irregular cycles lower confidence without changing the median rule', () => {
-  const starts = ['2026-01-01', '2026-01-24', '2026-02-29', '2026-03-25'];
+  // Isolated mathematical case: cycle lengths are 28, 36, and 24.
+  // Median(24, 28, 36) = 28; variation = 36 - 24 = 12, so confidence is Low.
+  const starts = ['2026-01-01', '2026-01-29', '2026-03-06', '2026-03-30'];
   const prediction = getPrediction(starts.map(date => log(date)), settings);
   assert.ok(prediction);
   assert.equal(prediction.completedCycleCount, 3);
-  assert.equal(prediction.typicalCycleLength, 32);
+  assert.equal(prediction.typicalCycleLength, 28);
   assert.equal(prediction.confidence, 'Low');
 });
 
