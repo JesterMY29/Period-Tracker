@@ -36,18 +36,36 @@ test('duplicate dates do not create artificial cycle length', () => {
   ])[0].length, 28);
 });
 
-test('two-day logging gap starts a new period, while a one-day gap stays together', () => {
-  assert.equal(detectPeriods([
+test('one missed calendar day stays inside the same period episode', () => {
+  const periods = detectPeriods([
     log('2026-01-01'),
     log('2026-01-03'),
     log('2026-01-30'),
-  ]).length, 1);
+  ]);
 
-  assert.equal(detectPeriods([
+  assert.equal(periods.length, 2);
+  assert.deepEqual(periods[0], {
+    startDate: '2026-01-01',
+    endDate: '2026-01-03',
+    length: 3,
+  });
+  assert.equal(periods[1].startDate, '2026-01-30');
+});
+
+test('two missed calendar days separate period episodes', () => {
+  const periods = detectPeriods([
     log('2026-01-01'),
     log('2026-01-04'),
     log('2026-01-30'),
-  ]).length, 2);
+  ]);
+
+  assert.equal(periods.length, 2);
+  assert.deepEqual(periods[0], {
+    startDate: '2026-01-01',
+    endDate: '2026-01-01',
+    length: 1,
+  });
+  assert.equal(periods[1].startDate, '2026-01-04');
 });
 
 test('long gaps are preserved rather than fabricated into extra cycles', () => {
