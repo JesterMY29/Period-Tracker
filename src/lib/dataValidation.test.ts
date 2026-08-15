@@ -17,10 +17,31 @@ test('normalizeLogs removes malformed entries and sorts valid logs', () => {
   ]);
 });
 
-test('normalizeSettings clamps invalid imported values to safe defaults', () => {
+test('normalizeSettings accepts the exact UI contract boundaries', () => {
   const defaults = { startingCycleLength: 28, startingPeriodLength: 5 };
 
-  assert.deepEqual(normalizeSettings({ startingCycleLength: 200, startingPeriodLength: 0 }, defaults), defaults);
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 15, startingPeriodLength: 1 }, defaults), {
+    startingCycleLength: 15,
+    startingPeriodLength: 1,
+  });
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 90, startingPeriodLength: 14 }, defaults), {
+    startingCycleLength: 90,
+    startingPeriodLength: 14,
+  });
+});
+
+test('normalizeSettings rejects values outside the UI contract', () => {
+  const defaults = { startingCycleLength: 28, startingPeriodLength: 5 };
+
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 14, startingPeriodLength: 5 }, defaults), defaults);
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 91, startingPeriodLength: 5 }, defaults), defaults);
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 28, startingPeriodLength: 0 }, defaults), defaults);
+  assert.deepEqual(normalizeSettings({ startingCycleLength: 28, startingPeriodLength: 15 }, defaults), defaults);
+});
+
+test('normalizeSettings rounds valid fractional values consistently', () => {
+  const defaults = { startingCycleLength: 28, startingPeriodLength: 5 };
+
   assert.deepEqual(normalizeSettings({ startingCycleLength: 31.6, startingPeriodLength: 6.4 }, defaults), {
     startingCycleLength: 32,
     startingPeriodLength: 6,
