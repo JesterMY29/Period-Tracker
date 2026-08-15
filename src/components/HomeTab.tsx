@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar as CalendarIcon, Plus, Info, ShieldCheck, Heart, AlertCircle, ArrowRight } from 'lucide-react';
+import { ArrowRight, CalendarDays, CheckCircle2, Plus, ShieldCheck } from 'lucide-react';
 import { DayLog, CycleSettings } from '../types';
 import {
   formatDate,
@@ -17,6 +17,12 @@ interface HomeTabProps {
   onNavigateToCalendar: () => void;
 }
 
+const confidenceCopy = {
+  High: 'Your recent cycles are consistent.',
+  Moderate: 'Your recent history gives us a useful estimate.',
+  Low: 'Keep logging to improve your personal baseline.',
+};
+
 export const HomeTab: React.FC<HomeTabProps> = ({
   logs,
   settings,
@@ -24,148 +30,170 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onNavigateToCalendar,
 }) => {
   const todayStr = formatDate(new Date());
-  const todayLog = logs.find(l => l.date === todayStr);
-
+  const todayLog = logs.find(log => log.date === todayStr);
   const periods = detectPeriods(logs);
   const prediction = getPrediction(logs, settings);
+  const latestPeriod = periods[periods.length - 1];
 
-  let currentCycleDayText = 'No period logged yet';
-  if (periods.length > 0) {
-    const lastPeriodStart = periods[periods.length - 1].startDate;
-    const daysSinceLastPeriod = getDaysDifference(lastPeriodStart, todayStr);
-    if (daysSinceLastPeriod >= 0) {
-      currentCycleDayText = `Day ${daysSinceLastPeriod + 1} of current cycle`;
-    } else {
-      currentCycleDayText = `Logged period starts ${formatDisplayDate(lastPeriodStart)}`;
-    }
-  }
+  const cycleDay = latestPeriod
+    ? getDaysDifference(latestPeriod.startDate, todayStr) + 1
+    : null;
+
+  const cycleStatus = cycleDay && cycleDay > 0
+    ? `Cycle day ${cycleDay}`
+    : 'Start tracking your cycle';
 
   return (
-    <div className="space-y-8 font-sans">
-      <div className="border border-[#1a1a1a]/10 bg-[#1a1a1a] text-[#f8f7f4] p-5 sm:p-6 flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#f8f7f4]/10 text-[#f8f7f4] border border-[#f8f7f4]/20">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block mb-0.5">
-              [01] Infrastructure &amp; Privacy
-            </span>
-            <h2 className="font-serif text-xl sm:text-2xl font-normal tracking-tight">
-              100% Private &amp; Local Storage
-            </h2>
-            <p className="font-sans text-xs text-[#f8f7f4]/80 mt-0.5">
-              All health records stay strictly in your browser's local storage. No AI models, cloud servers, or third-party tracking.
-            </p>
+    <div className="space-y-6 sm:space-y-8 font-sans">
+      {/* Primary status */}
+      <section className="card-refined overflow-hidden">
+        <div className="p-5 sm:p-7 bg-[#1a1a1a] text-[#f8f7f4]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#c47c7c]">Today · {formatDisplayDate(todayStr)}</p>
+              <h1 className="font-serif text-3xl sm:text-4xl mt-2 tracking-tight">{cycleStatus}</h1>
+              <p className="text-sm text-[#f8f7f4]/70 mt-2">
+                {latestPeriod
+                  ? `Last period started ${formatDisplayDate(latestPeriod.startDate)}.`
+                  : 'Log your first period day to start building your personal cycle baseline.'}
+              </p>
+            </div>
+            <div className="shrink-0 p-2.5 border border-[#f8f7f4]/15 bg-[#f8f7f4]/5">
+              <CalendarDays className="w-5 h-5" aria-hidden="true" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="card-refined p-6 sm:p-8 flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1a1a1a]/10 pb-3">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-[#c47c7c]">[02] Status Overview</span>
-              <span className="font-mono text-xs text-[#1a1a1a]/70">{formatDisplayDate(todayStr)}</span>
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="font-serif text-3xl sm:text-4xl text-[#1a1a1a] font-medium tracking-tight">{currentCycleDayText}</h3>
-              {periods.length > 0 && (
-                <p className="font-mono text-xs text-[#1a1a1a]/60">Last period start: {formatDisplayDate(periods[periods.length - 1].startDate)}</p>
+        <div className="p-5 sm:p-6 bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Next period</p>
+              {prediction ? (
+                <>
+                  <p className="font-serif text-2xl sm:text-3xl mt-1 text-[#1a1a1a]">
+                    {formatShortDate(prediction.predictedWindowStart)} – {formatShortDate(prediction.predictedWindowEnd)}
+                  </p>
+                  <p className="font-mono text-[11px] text-[#1a1a1a]/60 mt-1">
+                    {prediction.confidence} confidence · typical cycle {prediction.typicalCycleLength} days
+                  </p>
+                </>
+              ) : (
+                <p className="font-serif text-xl mt-1 text-[#1a1a1a]">Not enough history yet</p>
               )}
             </div>
-          </div>
-
-          <div className="pt-4 border-t border-[#1a1a1a]/10">
-            <button type="button" onClick={() => onOpenLogModal(todayStr)} className="bg-[#c47c7c] text-[#f8f7f4] w-full py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer">
-              <Plus className="w-4 h-4" />
-              {todayLog ? "UPDATE TODAY'S LOG" : "LOG TODAY'S ENTRY"}
+            <button
+              type="button"
+              onClick={() => onOpenLogModal(todayStr)}
+              className="bg-[#c47c7c] text-[#f8f7f4] px-5 py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              {todayLog ? 'Update today' : 'Log today'}
             </button>
           </div>
         </div>
+      </section>
 
-        <div className="card-refined p-6 sm:p-8 flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1a1a1a]/10 pb-3">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-[#c47c7c] flex items-center gap-1.5">
-                <CalendarIcon className="w-3.5 h-3.5" /> PREDICTED NEXT PERIOD
+      {/* Prediction detail */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="card-refined p-5 sm:p-6 lg:col-span-2">
+          <div className="flex items-center justify-between gap-3 border-b border-[#1a1a1a]/10 pb-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Prediction</p>
+              <h2 className="font-serif text-xl sm:text-2xl mt-1">Your personal estimate</h2>
+            </div>
+            {prediction && (
+              <span className="font-mono text-[10px] uppercase tracking-wider bg-[#1a1a1a] text-[#f8f7f4] px-2 py-1">
+                {prediction.confidence}
               </span>
-              {prediction && (
-                <span className="font-mono text-[10px] uppercase tracking-wider bg-[#1a1a1a] text-[#f8f7f4] px-2 py-0.5">
-                  {prediction.confidence} CONFIDENCE
-                </span>
+            )}
+          </div>
+
+          {prediction ? (
+            <div className="pt-5 space-y-4">
+              <div className="p-4 bg-[#f8f7f4] border border-[#1a1a1a]/10">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/55">Expected start</p>
+                <p className="font-serif text-2xl mt-1">{formatDisplayDate(prediction.expectedStartDate)}</p>
+                <p className="font-mono text-[11px] text-[#c47c7c] mt-1">Estimated window ±{prediction.marginDays} days</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 font-mono text-[11px]">
+                <div className="border border-[#1a1a1a]/10 p-3 bg-white">
+                  <span className="text-[#1a1a1a]/55 block">Recent cycles</span>
+                  <strong className="text-sm">{prediction.cyclesUsed || 'Starting estimate'}</strong>
+                </div>
+                <div className="border border-[#1a1a1a]/10 p-3 bg-white">
+                  <span className="text-[#1a1a1a]/55 block">Typical length</span>
+                  <strong className="text-sm">{prediction.typicalCycleLength} days</strong>
+                </div>
+              </div>
+              <p className="font-mono text-[11px] leading-relaxed text-[#1a1a1a]/65">
+                {confidenceCopy[prediction.confidence]} This is a mathematical estimate from recorded period starts, not medical advice.
+              </p>
+            </div>
+          ) : (
+            <div className="pt-5">
+              <div className="p-5 border border-dashed border-[#1a1a1a]/20 bg-[#f8f7f4]">
+                <p className="font-mono text-xs">Log period starts to build a personal prediction baseline.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="card-refined p-5 sm:p-6 flex flex-col justify-between gap-6">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Today</p>
+            <h2 className="font-serif text-xl mt-1">Daily record</h2>
+            <div className="mt-5 flex items-center gap-3">
+              {todayLog ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5 text-[#c47c7c]" aria-hidden="true" />
+                  <div>
+                    <p className="font-mono text-xs font-semibold">Entry recorded</p>
+                    <p className="font-mono text-[10px] text-[#1a1a1a]/55">Flow: {todayLog.flow}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5 text-[#c47c7c]" aria-hidden="true" />
+                  <div>
+                    <p className="font-mono text-xs font-semibold">Nothing logged today</p>
+                    <p className="font-mono text-[10px] text-[#1a1a1a]/55">A quick check-in keeps your history current.</p>
+                  </div>
+                </>
               )}
             </div>
-
-            {prediction ? (
-              <div className="space-y-3">
-                <div className="p-4 bg-[#f8f7f4] border border-[#1a1a1a]/10 space-y-2">
-                  <div className="font-serif text-2xl sm:text-3xl text-[#1a1a1a] font-normal">
-                    {formatShortDate(prediction.predictedWindowStart)} – {formatShortDate(prediction.predictedWindowEnd)}
-                  </div>
-                  <p className="font-mono text-xs text-[#c47c7c]">
-                    Estimated window (±{prediction.marginDays} days)
-                  </p>
-                  <div className="font-mono text-[10px] text-[#1a1a1a]/60 pt-2 border-t border-[#1a1a1a]/10 space-y-1">
-                    <p>{prediction.cyclesUsed > 0 ? `${prediction.cyclesUsed} recent cycles used` : 'Using your starting estimate'}</p>
-                    {prediction.cycleLengthRange && (
-                      <p>Recent cycle range: {prediction.cycleLengthRange.min}–{prediction.cycleLengthRange.max} days</p>
-                    )}
-                  </div>
-                </div>
-
-                <p className="font-mono text-[11px] text-[#1a1a1a]/70 leading-relaxed p-3 bg-white border border-[#1a1a1a]/10">
-                  <Info className="w-3.5 h-3.5 text-[#c47c7c] inline mr-1" />
-                  {prediction.label}. This is a mathematical estimate based on recorded period starts, not a medical prediction.
-                </p>
-              </div>
-            ) : (
-              <div className="p-5 bg-[#f8f7f4] border border-dashed border-[#1a1a1a]/20 text-center space-y-2">
-                <AlertCircle className="w-5 h-5 text-[#c47c7c] mx-auto" />
-                <p className="font-mono text-xs font-semibold text-[#1a1a1a]">No period predictions available yet</p>
-                <p className="font-mono text-[11px] text-[#1a1a1a]/60">Log your flow for at least one period date to begin calculating predicted period windows.</p>
-              </div>
-            )}
           </div>
-
-          <button type="button" onClick={onNavigateToCalendar} className="btn-secondary w-full flex items-center justify-center gap-2 cursor-pointer">
-            <span>VIEW FULL CALENDAR</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+          <button
+            type="button"
+            onClick={() => onOpenLogModal(todayStr)}
+            className="btn-secondary w-full cursor-pointer"
+          >
+            {todayLog ? 'Edit today’s entry' : 'Add today’s entry'}
           </button>
         </div>
-      </div>
+      </section>
 
-      <div className="card-refined p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-[#1a1a1a]/10 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 border border-[#1a1a1a]/10 bg-[#f8f7f4] text-[#1a1a1a]"><Heart className="w-4 h-4 text-[#c47c7c]" /></div>
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">[03] Today's Log ({todayStr})</span>
-              <h3 className="font-serif text-xl sm:text-2xl text-[#1a1a1a]">{todayLog ? 'Recorded Daily Log' : 'No Entry Recorded Today'}</h3>
-            </div>
+      {/* Secondary navigation */}
+      <section className="card-refined p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Explore your record</p>
+            <h2 className="font-serif text-xl mt-1">Calendar & cycle history</h2>
+            <p className="font-mono text-[11px] text-[#1a1a1a]/60 mt-1">Review logged days, predictions, and past cycles.</p>
           </div>
-          <button type="button" onClick={() => onOpenLogModal(todayStr)} className="btn-secondary cursor-pointer">{todayLog ? 'EDIT ENTRY' : 'ADD ENTRY'}</button>
+          <button
+            type="button"
+            onClick={onNavigateToCalendar}
+            className="btn-secondary flex items-center justify-center gap-2 cursor-pointer"
+          >
+            View calendar
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
         </div>
+      </section>
 
-        {todayLog ? (
-          <div className="p-5 bg-[#f8f7f4] border border-[#1a1a1a]/10 font-mono text-xs space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-semibold text-[#1a1a1a]">FLOW:</span>
-              <span className="px-3 py-1 bg-[#c47c7c] text-[#f8f7f4] font-medium uppercase tracking-wider">{todayLog.flow}</span>
-              {todayLog.mood && <><span className="font-semibold text-[#1a1a1a] ml-2">MOOD:</span><span className="px-3 py-1 bg-[#1a1a1a] text-[#f8f7f4] font-medium uppercase tracking-wider">{todayLog.mood}</span></>}
-            </div>
-            {todayLog.symptoms && todayLog.symptoms.length > 0 && (
-              <div className="space-y-1.5"><span className="font-semibold text-[#1a1a1a] block">SYMPTOMS:</span><div className="flex flex-wrap gap-1.5">{todayLog.symptoms.map((sym, idx) => <span key={idx} className="px-2.5 py-1 bg-white border border-[#1a1a1a]/15 text-[#1a1a1a]">{sym}</span>)}</div></div>
-            )}
-            {todayLog.notes && <div className="space-y-1 pt-2 border-t border-dashed border-[#1a1a1a]/15"><span className="font-semibold text-[#1a1a1a] block">NOTES:</span><p className="p-3 bg-white border border-[#1a1a1a]/10 font-sans italic text-[#1a1a1a]/80 text-sm">"{todayLog.notes}"</p></div>}
-          </div>
-        ) : (
-          <div className="p-6 bg-[#f8f7f4] border border-dashed border-[#1a1a1a]/20 text-center font-mono space-y-3">
-            <p className="text-xs text-[#1a1a1a]/70">Track your daily flow, mood, and symptoms to build an accurate personal cycle record.</p>
-            <button type="button" onClick={() => onOpenLogModal(todayStr)} className="text-xs font-semibold text-[#c47c7c] hover:underline cursor-pointer uppercase tracking-wider">+ Add entry for today</button>
-          </div>
-        )}
+      <div className="flex items-center justify-center gap-2 font-mono text-[10px] text-[#1a1a1a]/45">
+        <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+        Private by design · Your records stay on this device
       </div>
     </div>
   );
