@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import { CycleSettings, DayLog } from '../types';
 
@@ -20,6 +20,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
   const [startingPeriodLength, setStartingPeriodLength] = useState<number>(settings.startingPeriodLength || 5);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    setStartingCycleLength(settings.startingCycleLength || 28);
+    setStartingPeriodLength(settings.startingPeriodLength || 5);
+  }, [settings]);
 
   const handleSaveSettings = (event: React.FormEvent) => {
     event.preventDefault();
