@@ -72,7 +72,11 @@ export default function App() {
   };
 
   const handleClearAllData = () => {
+    const defaults = getDefaultSettings();
     setLogs([]);
+    setSettings(defaults);
+    localStorage.removeItem(STORAGE_KEY_LOGS);
+    localStorage.removeItem(STORAGE_KEY_SETTINGS);
   };
 
   const existingLog = logs.find(log => log.date === selectedLogDate);
