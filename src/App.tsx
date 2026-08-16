@@ -10,6 +10,7 @@ import { getDefaultSettings, getDefaultLogs } from './data/initialData';
 import { formatDate } from './lib/cycleUtils';
 import { normalizeLogs, normalizeSettings, serializeLogs, serializeSettings } from './lib/dataValidation';
 import { createQuickFlowLog } from './lib/quickLog';
+import { AppTab, DEFAULT_APP_TAB } from './lib/navigation';
 
 const STORAGE_KEY_SETTINGS = 'auracycle_settings_v2';
 const STORAGE_KEY_LOGS = 'auracycle_logs_v2';
@@ -36,7 +37,7 @@ function readStoredLogs(): DayLog[] {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>(DEFAULT_APP_TAB);
   const [settings, setSettings] = useState<CycleSettings>(readStoredSettings);
   const [logs, setLogs] = useState<DayLog[]>(readStoredLogs);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
