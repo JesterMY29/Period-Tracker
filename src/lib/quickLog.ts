@@ -5,11 +5,14 @@ import { DayLog, FlowLevel } from '../types';
  * recorded for the same day. This keeps quick logging safe for existing edits.
  */
 export function createQuickFlowLog(date: string, flow: FlowLevel, existingLog?: DayLog): DayLog {
-  return {
+  const log: DayLog = {
     date,
     flow,
-    mood: existingLog?.mood,
     symptoms: existingLog?.symptoms ? [...existingLog.symptoms] : [],
-    notes: existingLog?.notes,
   };
+
+  if (existingLog?.mood !== undefined) log.mood = existingLog.mood;
+  if (existingLog?.notes !== undefined) log.notes = existingLog.notes;
+
+  return log;
 }
