@@ -51,7 +51,18 @@ function installDom(dom: JSDOM) {
   dom.window.URL.revokeObjectURL = dom.window.URL.revokeObjectURL || (() => undefined);
 
   for (const [key, value] of Object.entries(globals)) {
-    (globalThis as Record<string, unknown>)[key] = value;
+    if (key === 'navigator') {
+      // Node 21+ exposes a read-only global navigator accessor. Define the
+      // jsdom navigator explicitly instead of assigning through that accessor.
+      Object.defineProperty(globalThis, key, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value,
+      });
+    } else {
+      (globalThis as Record<string, unknown>)[key] = value;
+    }
   }
 }
 
