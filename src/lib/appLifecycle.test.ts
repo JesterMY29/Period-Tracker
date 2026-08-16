@@ -108,7 +108,11 @@ async function cleanup(harness: Harness) {
 }
 
 function button(container: HTMLElement, label: RegExp): HTMLButtonElement {
-  const match = Array.from(container.querySelectorAll('button')).find(candidate => label.test(candidate.textContent?.trim() || ''));
+  const match = Array.from(container.querySelectorAll('button')).find(candidate => {
+    const fullText = candidate.textContent?.trim() || '';
+    const firstDirectSpan = candidate.querySelector(':scope > span')?.textContent?.trim() || '';
+    return label.test(fullText) || label.test(firstDirectSpan);
+  });
   assert.ok(match, `button ${label} should exist`);
   return match as HTMLButtonElement;
 }
@@ -187,9 +191,9 @@ async function clearAll(harness: Harness) {
 }
 
 function historyLoggedDays(container: HTMLElement): string {
-  const cards = Array.from(container.querySelectorAll('div')).filter(node => node.textContent?.trim() === 'Logged days');
-  assert.ok(cards.length > 0);
-  const card = cards[0].parentElement;
+  const label = Array.from(container.querySelectorAll('p')).find(node => node.textContent?.trim() === 'Logged days');
+  assert.ok(label);
+  const card = label.parentElement;
   assert.ok(card);
   const value = card.querySelector('p.font-serif');
   return value?.textContent?.trim() || '';
