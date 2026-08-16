@@ -3,6 +3,8 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import React, { act } from 'react';
 
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+
 type Harness = {
   dom: JSDOM;
   root: { render: (element: React.ReactNode) => void; unmount: () => void };
