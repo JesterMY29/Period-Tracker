@@ -14,12 +14,23 @@ const SYMPTOMS: SymptomType[] = [
   'Other',
 ];
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function isValidDateString(value: unknown): value is string {
-  if (typeof value !== 'string' || !DATE_PATTERN.test(value)) return false;
-  const date = new Date(`${value}T00:00:00`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  if (typeof value !== 'string') return false;
+  const match = DATE_PATTERN.exec(value);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 function isOneOf<T extends string>(value: unknown, values: readonly T[]): value is T {
