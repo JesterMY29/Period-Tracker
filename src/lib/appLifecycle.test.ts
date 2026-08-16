@@ -114,13 +114,17 @@ function button(container: HTMLElement, label: RegExp): HTMLButtonElement {
 }
 
 function click(element: Element) {
-  element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  act(() => {
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  });
 }
 
 function setInputValue(input: HTMLInputElement, value: string) {
-  input.value = value;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
+  act(() => {
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
 }
 
 async function flush() {
@@ -332,7 +336,9 @@ test('P07 — Import → reload preserves imported logs and settings', async () 
     });
     const file = new harness.dom.window.File([payload], 'auracycle-backup.json', { type: 'application/json' });
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
-    input.dispatchEvent(new harness.dom.window.Event('change', { bubbles: true }));
+    act(() => {
+      input.dispatchEvent(new harness.dom.window.Event('change', { bubbles: true }));
+    });
     await new Promise(resolve => setTimeout(resolve, 10));
     await flush();
 
