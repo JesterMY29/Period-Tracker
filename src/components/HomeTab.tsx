@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight, CalendarDays, CheckCircle2, Plus, ShieldCheck } from 'lucide-react';
-import { DayLog, CycleSettings } from '../types';
+import { DayLog, CycleSettings, FlowLevel } from '../types';
 import {
   formatDate,
   formatDisplayDate,
@@ -14,6 +14,7 @@ interface HomeTabProps {
   logs: DayLog[];
   settings: CycleSettings;
   onOpenLogModal: (dateStr: string) => void;
+  onQuickFlowLog: (flow: FlowLevel) => void;
   onNavigateToCalendar: () => void;
 }
 
@@ -23,10 +24,21 @@ const confidenceCopy = {
   Low: 'Keep logging to improve your personal baseline.',
 };
 
+const QUICK_FLOW_OPTIONS: FlowLevel[] = ['None', 'Spotting', 'Light', 'Medium', 'Heavy'];
+
+const quickFlowLabels: Record<FlowLevel, string> = {
+  None: 'None',
+  Spotting: 'Spotting',
+  Light: 'Light',
+  Medium: 'Medium',
+  Heavy: 'Heavy',
+};
+
 export const HomeTab: React.FC<HomeTabProps> = ({
   logs,
   settings,
   onOpenLogModal,
+  onQuickFlowLog,
   onNavigateToCalendar,
 }) => {
   const todayStr = formatDate(new Date());
@@ -87,10 +99,56 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="bg-[#c47c7c] text-[#f8f7f4] px-5 py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
-              {todayLog ? 'Update today' : 'Log today'}
+              {todayLog ? 'Edit details' : 'More details'}
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Phase 2B: fast flow logging */}
+      <section className="card-refined p-5 sm:p-6" aria-labelledby="quick-log-heading">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Quick log</p>
+            <h2 id="quick-log-heading" className="font-serif text-xl sm:text-2xl mt-1">Record today in one tap</h2>
+            <p className="font-mono text-[11px] text-[#1a1a1a]/60 mt-1">Flow is saved immediately. Add mood, symptoms, or notes only if you want to.</p>
+          </div>
+          {todayLog && (
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/60">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#c47c7c]" aria-hidden="true" />
+              Saved: {todayLog.flow}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-5 gap-2">
+          {QUICK_FLOW_OPTIONS.map(flow => {
+            const isSelected = todayLog?.flow === flow;
+            return (
+              <button
+                key={flow}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onQuickFlowLog(flow)}
+                className={`min-h-14 sm:min-h-16 px-1.5 border rounded-lg font-medium text-[10px] sm:text-xs text-center transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#c47c7c] text-white border-[#c47c7c] shadow-sm'
+                    : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/12 hover:border-[#1a1a1a]/40'
+                }`}
+              >
+                {quickFlowLabels[flow]}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpenLogModal(todayStr)}
+          className="mt-3 text-xs font-mono text-[#1a1a1a]/65 hover:text-[#1a1a1a] underline underline-offset-2 cursor-pointer"
+        >
+          Add optional details
+        </button>
       </section>
 
       {/* Prediction detail */}
