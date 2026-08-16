@@ -10,6 +10,7 @@ import { getDefaultSettings, getDefaultLogs } from './data/initialData';
 import { formatDate } from './lib/cycleUtils';
 import { normalizeLogs, normalizeSettings, serializeLogs, serializeSettings } from './lib/dataValidation';
 import { createQuickFlowLog } from './lib/quickLog';
+import { AppTab, DEFAULT_APP_TAB, resolveAppTab } from './lib/navigation';
 
 const STORAGE_KEY_SETTINGS = 'auracycle_settings_v2';
 const STORAGE_KEY_LOGS = 'auracycle_logs_v2';
@@ -35,8 +36,13 @@ function readStoredLogs(): DayLog[] {
   }
 }
 
+function readInitialAppTab(): AppTab {
+  if (typeof window === 'undefined') return DEFAULT_APP_TAB;
+  return resolveAppTab(window.location.hash.slice(1));
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>(readInitialAppTab);
   const [settings, setSettings] = useState<CycleSettings>(readStoredSettings);
   const [logs, setLogs] = useState<DayLog[]>(readStoredLogs);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
@@ -51,6 +57,14 @@ export default function App() {
   }, [logs]);
 
   const todayStr = formatDate(new Date());
+
+  const handleNavigate = (tab: AppTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const baseUrl = `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState(null, '', tab === DEFAULT_APP_TAB ? baseUrl : `${baseUrl}#${tab}`);
+    }
+  };
 
   const handleOpenLogModalForDate = (dateStr: string) => {
     setSelectedLogDate(dateStr);
@@ -89,9 +103,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] text-[#2d2d2a] font-sans antialiased flex flex-col selection:bg-[#fed9b7]">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
+      <Header activeTab={activeTab} setActiveTab={handleNavigate} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
-        {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onQuickFlowLog={handleQuickFlowLog} onNavigateToCalendar={() => setActiveTab('calendar')} />}
+        {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onQuickFlowLog={handleQuickFlowLog} onNavigateToCalendar={() => handleNavigate('calendar')} />}
         {activeTab === 'calendar' && <CalendarView logs={logs} settings={settings} onSelectDate={handleOpenLogModalForDate} />}
         {activeTab === 'history' && <HistoryTab logs={logs} />}
         {activeTab === 'settings' && <SettingsTab settings={settings} onUpdateSettings={setSettings} logs={logs} onImportLogs={handleImportLogs} onClearAllData={handleClearAllData} />}

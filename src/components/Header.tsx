@@ -1,17 +1,18 @@
 import React from 'react';
 import { Home, Calendar, History, Settings, Plus, Lock } from 'lucide-react';
+import { AppTab } from '../lib/navigation';
 
 interface HeaderProps {
-  activeTab: 'home' | 'calendar' | 'history' | 'settings';
-  setActiveTab: (tab: 'home' | 'calendar' | 'history' | 'settings') => void;
+  activeTab: AppTab;
+  setActiveTab: (tab: AppTab) => void;
   onOpenLogModal: () => void;
 }
 
 const navItems = [
-  { id: 'home' as const, label: 'Home', Icon: Home },
-  { id: 'calendar' as const, label: 'Calendar', Icon: Calendar },
-  { id: 'history' as const, label: 'History', Icon: History },
-  { id: 'settings' as const, label: 'Settings', Icon: Settings },
+  { id: 'home' as AppTab, label: 'Home', Icon: Home },
+  { id: 'calendar' as AppTab, label: 'Calendar', Icon: Calendar },
+  { id: 'history' as AppTab, label: 'History', Icon: History },
+  { id: 'settings' as AppTab, label: 'Settings', Icon: Settings },
 ];
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenLogModal }) => {
