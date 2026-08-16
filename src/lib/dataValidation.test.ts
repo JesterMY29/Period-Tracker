@@ -17,6 +17,20 @@ test('normalizeLogs removes malformed entries and sorts valid logs', () => {
   ]);
 });
 
+test('normalizeLogs validates calendar dates without timezone dependence', () => {
+  const logs = normalizeLogs([
+    { date: '2024-02-29', flow: 'Light', symptoms: [] },
+    { date: '2026-02-29', flow: 'Light', symptoms: [] },
+    { date: '2026-04-31', flow: 'Light', symptoms: [] },
+    { date: '2026-13-01', flow: 'Light', symptoms: [] },
+    { date: '2026-00-10', flow: 'Light', symptoms: [] },
+  ]);
+
+  assert.deepEqual(logs, [
+    { date: '2024-02-29', flow: 'Light', symptoms: [] },
+  ]);
+});
+
 test('normalizeSettings accepts the exact UI contract boundaries', () => {
   const defaults = { startingCycleLength: 28, startingPeriodLength: 5 };
 
