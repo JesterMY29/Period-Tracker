@@ -5,10 +5,11 @@ import { CalendarView } from './components/CalendarView';
 import { HistoryTab } from './components/HistoryTab';
 import { SettingsTab } from './components/SettingsTab';
 import { SymptomLoggerModal } from './components/SymptomLoggerModal';
-import { DayLog, CycleSettings } from './types';
+import { DayLog, CycleSettings, FlowLevel } from './types';
 import { getDefaultSettings, getDefaultLogs } from './data/initialData';
 import { formatDate } from './lib/cycleUtils';
 import { normalizeLogs, normalizeSettings, serializeLogs, serializeSettings } from './lib/dataValidation';
+import { createQuickFlowLog } from './lib/quickLog';
 
 const STORAGE_KEY_SETTINGS = 'auracycle_settings_v2';
 const STORAGE_KEY_LOGS = 'auracycle_logs_v2';
@@ -60,6 +61,11 @@ export default function App() {
     setLogs(prev => normalizeLogs([...prev.filter(log => log.date !== newLog.date), newLog]));
   };
 
+  const handleQuickFlowLog = (flow: FlowLevel) => {
+    const existingLog = logs.find(log => log.date === todayStr);
+    handleSaveLog(createQuickFlowLog(todayStr, flow, existingLog));
+  };
+
   const handleDeleteLog = (dateStr: string) => {
     setLogs(prev => prev.filter(log => log.date !== dateStr));
   };
@@ -85,7 +91,7 @@ export default function App() {
     <div className="min-h-screen bg-[#f8f7f4] text-[#2d2d2a] font-sans antialiased flex flex-col selection:bg-[#fed9b7]">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
-        {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onNavigateToCalendar={() => setActiveTab('calendar')} />}
+        {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onQuickFlowLog={handleQuickFlowLog} onNavigateToCalendar={() => setActiveTab('calendar')} />}
         {activeTab === 'calendar' && <CalendarView logs={logs} settings={settings} onSelectDate={handleOpenLogModalForDate} />}
         {activeTab === 'history' && <HistoryTab logs={logs} />}
         {activeTab === 'settings' && <SettingsTab settings={settings} onUpdateSettings={setSettings} logs={logs} onImportLogs={handleImportLogs} onClearAllData={handleClearAllData} />}
