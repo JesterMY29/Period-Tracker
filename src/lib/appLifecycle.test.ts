@@ -113,17 +113,24 @@ function button(container: HTMLElement, label: RegExp): HTMLButtonElement {
   return match as HTMLButtonElement;
 }
 
-function click(element: Element) {
-  act(() => {
-    element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+async function click(element: Element) {
+  await act(async () => {
+    (element as HTMLElement).click();
   });
 }
 
-function setInputValue(input: HTMLInputElement, value: string) {
-  act(() => {
-    input.value = value;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+async function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  await act(async () => {
+    const prototype = Object.getPrototypeOf(input);
+    const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+    if (setter) {
+      setter.call(input, value);
+    } else {
+      input.value = value;
+    }
+    const view = input.ownerDocument.defaultView;
+    input.dispatchEvent(new (view?.Event || Event)('input', { bubbles: true }));
+    input.dispatchEvent(new (view?.Event || Event)('change', { bubbles: true }));
   });
 }
 
@@ -133,49 +140,49 @@ async function flush() {
   });
 }
 
-function goTo(container: HTMLElement, label: RegExp) {
-  click(button(container, label));
+async function goTo(container: HTMLElement, label: RegExp) {
+  await click(button(container, label));
 }
 
 async function saveLog(harness: Harness, date: string, flow: string, notes?: string) {
-  click(button(harness.container, /^Log( today)?$/));
+  await click(button(harness.container, /^Log( today)?$/));
   await flush();
 
   const dateInput = harness.container.querySelector('#log-date') as HTMLInputElement | null;
   assert.ok(dateInput);
-  setInputValue(dateInput, date);
+  await setInputValue(dateInput, date);
 
-  click(button(harness.container, new RegExp(`^${flow}$`)));
+  await click(button(harness.container, new RegExp(`^${flow}$`)));
 
   if (notes) {
     const textarea = harness.container.querySelector('textarea');
     assert.ok(textarea);
-    setInputValue(textarea as HTMLInputElement, notes);
+    await setInputValue(textarea, notes);
   }
 
-  click(button(harness.container, /^Save check-in$/));
+  await click(button(harness.container, /^Save check-in$/));
   await flush();
 }
 
 async function openCalendarRecord(harness: Harness, date: string) {
-  goTo(harness.container, /^Calendar$/);
+  await goTo(harness.container, /^Calendar$/);
   await flush();
   const day = harness.container.querySelector(`button[aria-label^="${date}"]`);
   assert.ok(day, `calendar day ${date} should exist`);
-  click(day);
+  await click(day);
   await flush();
 }
 
 async function openSettings(harness: Harness) {
-  goTo(harness.container, /^Settings$/);
+  await goTo(harness.container, /^Settings$/);
   await flush();
 }
 
 async function clearAll(harness: Harness) {
   await openSettings(harness);
-  click(button(harness.container, /^DELETE ALL DATA$/));
+  await click(button(harness.container, /^DELETE ALL DATA$/));
   await flush();
-  click(button(harness.container, /^YES, DELETE$/));
+  await click(button(harness.container, /^YES, DELETE$/));
   await flush();
 }
 
@@ -196,7 +203,7 @@ test('P01 — Save → reload preserves the recorded log in the application', as
     assert.ok(harness.dom.window.localStorage.getItem(LOGS_KEY));
 
     await reload(harness);
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '1');
   } finally {
@@ -211,9 +218,9 @@ test('P02 — Settings → reload preserves the saved baseline in the applicatio
     await openSettings(harness);
     const inputs = harness.container.querySelectorAll('input[type="number"]');
     assert.equal(inputs.length, 2);
-    setInputValue(inputs[0] as HTMLInputElement, '31');
-    setInputValue(inputs[1] as HTMLInputElement, '6');
-    click(button(harness.container, /^SAVE BASELINE$/));
+    await setInputValue(inputs[0] as HTMLInputElement, '31');
+    await setInputValue(inputs[1] as HTMLInputElement, '6');
+    await click(button(harness.container, /^SAVE BASELINE$/));
     await flush();
 
     await reload(harness);
@@ -233,9 +240,9 @@ test('P03 — Logs + settings → reload preserves the combined application stat
     await saveLog(harness, '2026-08-10', 'Light', 'combined state');
     await openSettings(harness);
     const inputs = harness.container.querySelectorAll('input[type="number"]');
-    setInputValue(inputs[0] as HTMLInputElement, '30');
-    setInputValue(inputs[1] as HTMLInputElement, '5');
-    click(button(harness.container, /^SAVE BASELINE$/));
+    await setInputValue(inputs[0] as HTMLInputElement, '30');
+    await setInputValue(inputs[1] as HTMLInputElement, '5');
+    await click(button(harness.container, /^SAVE BASELINE$/));
     await flush();
 
     await reload(harness);
@@ -243,7 +250,7 @@ test('P03 — Logs + settings → reload preserves the combined application stat
     const restored = harness.container.querySelectorAll('input[type="number"]');
     assert.equal((restored[0] as HTMLInputElement).value, '30');
     assert.equal((restored[1] as HTMLInputElement).value, '5');
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '1');
   } finally {
@@ -258,8 +265,8 @@ test('P04 — Clear All → reload produces a genuinely clean application state'
     await saveLog(harness, '2026-08-10', 'Heavy');
     await openSettings(harness);
     const inputs = harness.container.querySelectorAll('input[type="number"]');
-    setInputValue(inputs[0] as HTMLInputElement, '33');
-    click(button(harness.container, /^SAVE BASELINE$/));
+    await setInputValue(inputs[0] as HTMLInputElement, '33');
+    await click(button(harness.container, /^SAVE BASELINE$/));
     await flush();
 
     await clearAll(harness);
@@ -268,7 +275,7 @@ test('P04 — Clear All → reload produces a genuinely clean application state'
     const restored = harness.container.querySelectorAll('input[type="number"]');
     assert.equal((restored[0] as HTMLInputElement).value, '28');
     assert.equal((restored[1] as HTMLInputElement).value, '5');
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '0');
   } finally {
@@ -286,8 +293,8 @@ test('P05 — Historical edit → reload keeps the edited record authoritative',
 
     const textarea = harness.container.querySelector('textarea');
     assert.ok(textarea);
-    setInputValue(textarea as HTMLInputElement, 'after edit');
-    click(button(harness.container, /^Save check-in$/));
+    await setInputValue(textarea, 'after edit');
+    await click(button(harness.container, /^Save check-in$/));
     await flush();
 
     await reload(harness);
@@ -308,13 +315,13 @@ test('P06 — Historical deletion → reload keeps the deletion authoritative', 
     await reload(harness);
     await openCalendarRecord(harness, '2026-08-10');
 
-    click(button(harness.container, /Delete this day/));
+    await click(button(harness.container, /Delete this day/));
     await flush();
-    click(button(harness.container, /^Yes, delete$/));
+    await click(button(harness.container, /^Yes, delete$/));
     await flush();
 
     await reload(harness);
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '0');
   } finally {
@@ -336,10 +343,10 @@ test('P07 — Import → reload preserves imported logs and settings', async () 
     });
     const file = new harness.dom.window.File([payload], 'auracycle-backup.json', { type: 'application/json' });
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
-    act(() => {
+    await act(async () => {
       input.dispatchEvent(new harness.dom.window.Event('change', { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 10));
     });
-    await new Promise(resolve => setTimeout(resolve, 10));
     await flush();
 
     await reload(harness);
@@ -347,7 +354,7 @@ test('P07 — Import → reload preserves imported logs and settings', async () 
     const restored = harness.container.querySelectorAll('input[type="number"]');
     assert.equal((restored[0] as HTMLInputElement).value, '32');
     assert.equal((restored[1] as HTMLInputElement).value, '6');
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '1');
   } finally {
@@ -366,7 +373,7 @@ test('P08 — Corrupt persistence → reload recovers safely to defaults', async
     const restored = harness.container.querySelectorAll('input[type="number"]');
     assert.equal((restored[0] as HTMLInputElement).value, '28');
     assert.equal((restored[1] as HTMLInputElement).value, '5');
-    goTo(harness.container, /^History$/);
+    await goTo(harness.container, /^History$/);
     await flush();
     assert.equal(historyLoggedDays(harness.container), '0');
   } finally {
