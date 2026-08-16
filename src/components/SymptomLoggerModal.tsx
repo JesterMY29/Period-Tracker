@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Trash2, Check, AlertCircle } from 'lucide-react';
+import { X, CalendarDays, Trash2, Check, AlertCircle, Droplets } from 'lucide-react';
 import { DayLog, FlowLevel, MoodType, SymptomType } from '../types';
 
 interface SymptomLoggerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedDate: string; // YYYY-MM-DD
+  selectedDate: string;
   existingLog?: DayLog;
   onSaveLog: (log: DayLog) => void;
   onDeleteLog: (date: string) => void;
@@ -24,6 +24,14 @@ const SYMPTOM_OPTIONS: SymptomType[] = [
   'Acne',
   'Other',
 ];
+
+const FLOW_HINTS: Record<FlowLevel, string> = {
+  None: 'No bleeding today',
+  Spotting: 'Very light spotting',
+  Light: 'Light bleeding',
+  Medium: 'Typical flow',
+  Heavy: 'Heavy bleeding',
+};
 
 export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   isOpen,
@@ -59,11 +67,10 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   if (!isOpen) return null;
 
   const toggleSymptom = (symptom: SymptomType) => {
-    if (symptoms.includes(symptom)) {
-      setSymptoms(symptoms.filter(s => s !== symptom));
-    } else {
-      setSymptoms([...symptoms, symptom]);
-    }
+    setSymptoms(current => current.includes(symptom)
+      ? current.filter(item => item !== symptom)
+      : [...current, symptom]
+    );
   };
 
   const handleSave = () => {
@@ -84,49 +91,59 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-      <div className="bg-[#f8f7f4] border border-[#1a1a1a]/20 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-        {/* Modal Header */}
-        <div className="p-5 sm:p-6 border-b border-[#1a1a1a]/10 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-[#c47c7c]" />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="log-dialog-title"
+        className="bg-[#f8f7f4] border border-[#1a1a1a]/15 w-full sm:max-w-lg max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl rounded-t-2xl sm:rounded-none"
+      >
+        <div className="p-5 sm:p-6 border-b border-[#1a1a1a]/10 bg-white">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-                [LOG ENTRY]
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#c47c7c] block mb-1">
+                {existingLog ? 'EDIT RECORD' : 'DAILY CHECK-IN'}
               </span>
-              <h2 className="font-serif text-2xl text-[#1a1a1a]">
-                Daily Health Record
+              <h2 id="log-dialog-title" className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">
+                {existingLog ? 'Update your day' : 'How was today?'}
               </h2>
+              <p className="text-xs text-[#1a1a1a]/55 mt-1">
+                Log the essentials first. Everything else is optional.
+              </p>
             </div>
+            <button
+              type="button"
+              aria-label="Close log"
+              onClick={onClose}
+              className="p-2 border border-[#1a1a1a]/10 hover:bg-[#1a1a1a]/5 transition cursor-pointer text-[#1a1a1a]"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-[#1a1a1a]/5 border border-[#1a1a1a]/10 transition cursor-pointer text-[#1a1a1a]"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Modal Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 font-mono text-xs">
-          {/* Date Selector */}
-          <div className="space-y-2">
-            <label className="block text-[10px] uppercase tracking-widest text-[#c47c7c]">
-              ENTRY DATE
-            </label>
+          <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[#1a1a1a]/70">
+            <CalendarDays className="w-4 h-4" />
+            <label htmlFor="log-date">Date</label>
             <input
+              id="log-date"
               type="date"
               value={logDate}
               onChange={e => setLogDate(e.target.value)}
-              className="w-full p-2.5 bg-white border border-[#1a1a1a]/15 font-mono text-sm focus:outline-none focus:border-[#1a1a1a]"
+              className="ml-auto bg-[#f8f7f4] border border-[#1a1a1a]/15 px-2.5 py-2 font-mono text-xs focus:outline-none focus:border-[#1a1a1a]"
             />
           </div>
+        </div>
 
-          {/* Flow Selector */}
-          <div className="space-y-2">
-            <label className="block text-[10px] uppercase tracking-widest text-[#c47c7c]">
-              MENSTRUAL FLOW
-            </label>
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-7 flex-1">
+          <section aria-labelledby="flow-heading" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-[#c47c7c]" />
+              <div>
+                <h3 id="flow-heading" className="text-sm font-semibold text-[#1a1a1a]">What was your flow?</h3>
+                <p className="text-[11px] text-[#1a1a1a]/50">This is the most important part of today's log.</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {FLOW_OPTIONS.map(option => {
                 const isSelected = flow === option;
@@ -134,25 +151,29 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                   <button
                     key={option}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setFlow(option)}
-                    className={`py-2 px-1 border font-mono text-[11px] text-center transition-all cursor-pointer ${
+                    className={`min-h-16 sm:min-h-20 px-1.5 border rounded-lg font-medium text-[11px] sm:text-xs text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#c47c7c] text-[#f8f7f4] border-[#c47c7c] font-medium'
-                        : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/15 hover:border-[#1a1a1a]'
+                        ? 'bg-[#c47c7c] text-white border-[#c47c7c] shadow-sm'
+                        : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/12 hover:border-[#1a1a1a]/40'
                     }`}
                   >
-                    {option}
+                    <span className="block">{option}</span>
+                    <span className={`block mt-1 text-[9px] leading-tight ${isSelected ? 'text-white/80' : 'text-[#1a1a1a]/40'}`}>
+                      {FLOW_HINTS[option]}
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* Mood Selector */}
-          <div className="space-y-2">
-            <label className="block text-[10px] uppercase tracking-widest text-[#c47c7c]">
-              MOOD
-            </label>
+          <section aria-labelledby="mood-heading" className="space-y-3">
+            <div>
+              <h3 id="mood-heading" className="text-sm font-semibold text-[#1a1a1a]">How do you feel?</h3>
+              <p className="text-[11px] text-[#1a1a1a]/50">Optional</p>
+            </div>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {MOOD_OPTIONS.map(option => {
                 const isSelected = mood === option;
@@ -160,11 +181,12 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                   <button
                     key={option}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setMood(isSelected ? undefined : option)}
-                    className={`py-2 px-1 border font-mono text-[11px] text-center transition-all cursor-pointer ${
+                    className={`py-2.5 px-1 border rounded-lg text-[10px] sm:text-[11px] text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#1a1a1a] text-[#f8f7f4] border-[#1a1a1a] font-medium'
-                        : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/15 hover:border-[#1a1a1a]'
+                        ? 'bg-[#1a1a1a] text-white border-[#1a1a1a] font-medium'
+                        : 'bg-white text-[#1a1a1a]/80 border-[#1a1a1a]/12 hover:border-[#1a1a1a]/40'
                     }`}
                   >
                     {option}
@@ -172,13 +194,13 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* Symptoms Checklist */}
-          <div className="space-y-2">
-            <label className="block text-[10px] uppercase tracking-widest text-[#c47c7c]">
-              SYMPTOMS
-            </label>
+          <section aria-labelledby="symptoms-heading" className="space-y-3">
+            <div>
+              <h3 id="symptoms-heading" className="text-sm font-semibold text-[#1a1a1a]">Any symptoms?</h3>
+              <p className="text-[11px] text-[#1a1a1a]/50">Select any that apply · Optional</p>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {SYMPTOM_OPTIONS.map(symptom => {
                 const isChecked = symptoms.includes(symptom);
@@ -186,67 +208,59 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                   <button
                     key={symptom}
                     type="button"
+                    aria-pressed={isChecked}
                     onClick={() => toggleSymptom(symptom)}
-                    className={`py-2 px-2.5 border text-left font-mono text-[11px] flex items-center justify-between transition-all cursor-pointer ${
+                    className={`py-2.5 px-2.5 border rounded-lg text-left text-[11px] flex items-center justify-between gap-2 transition-all cursor-pointer ${
                       isChecked
                         ? 'bg-[#1a1a1a]/5 border-[#1a1a1a] text-[#1a1a1a] font-medium'
-                        : 'bg-white text-[#1a1a1a]/80 border-[#1a1a1a]/15 hover:border-[#1a1a1a]'
+                        : 'bg-white text-[#1a1a1a]/75 border-[#1a1a1a]/12 hover:border-[#1a1a1a]/40'
                     }`}
                   >
                     <span>{symptom}</span>
-                    {isChecked && <Check className="w-3.5 h-3.5 text-[#c47c7c]" />}
+                    {isChecked && <Check className="w-3.5 h-3.5 text-[#c47c7c] shrink-0" />}
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <label className="block text-[10px] uppercase tracking-widest text-[#c47c7c]">
-              OPTIONAL NOTES
-            </label>
+          <section aria-labelledby="notes-heading" className="space-y-3">
+            <div>
+              <h3 id="notes-heading" className="text-sm font-semibold text-[#1a1a1a]">Anything else?</h3>
+              <p className="text-[11px] text-[#1a1a1a]/50">Optional note for your future self</p>
+            </div>
             <textarea
               rows={3}
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Record any additional personal observations..."
-              className="w-full p-3 bg-white border border-[#1a1a1a]/15 font-sans text-xs focus:outline-none focus:border-[#1a1a1a]"
+              placeholder="A quick observation, if useful..."
+              className="w-full p-3 bg-white border border-[#1a1a1a]/12 rounded-lg text-sm focus:outline-none focus:border-[#1a1a1a] resize-none"
             />
-          </div>
+          </section>
 
-          {/* Delete Prompt */}
           {existingLog && (
-            <div className="pt-2 border-t border-dashed border-[#1a1a1a]/20">
+            <div className="pt-2 border-t border-dashed border-[#1a1a1a]/15">
               {!showConfirmDelete ? (
                 <button
                   type="button"
                   onClick={() => setShowConfirmDelete(true)}
-                  className="font-mono text-xs text-[#c47c7c] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-[#c47c7c] hover:underline flex items-center gap-1.5 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Delete entry for this date
+                  Delete this day's record
                 </button>
               ) : (
-                <div className="p-3 bg-white border border-[#c47c7c] space-y-2">
-                  <div className="flex items-center gap-2 text-[#c47c7c] font-mono text-xs">
+                <div className="p-3 bg-white border border-[#c47c7c] rounded-lg space-y-3">
+                  <div className="flex items-center gap-2 text-[#c47c7c] text-xs">
                     <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>Confirm delete entry for {logDate}?</span>
+                    <span>Delete the record for {logDate}?</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      className="px-3 py-1 bg-[#c47c7c] text-[#f8f7f4] font-mono text-xs cursor-pointer"
-                    >
-                      Yes, Delete
+                    <button type="button" onClick={handleDelete} className="px-3 py-2 bg-[#c47c7c] text-white text-xs rounded-md cursor-pointer">
+                      Yes, delete
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmDelete(false)}
-                      className="px-3 py-1 bg-white border border-[#1a1a1a]/20 text-[#1a1a1a] font-mono text-xs cursor-pointer"
-                    >
-                      Cancel
+                    <button type="button" onClick={() => setShowConfirmDelete(false)} className="px-3 py-2 bg-white border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs rounded-md cursor-pointer">
+                      Keep record
                     </button>
                   </div>
                 </div>
@@ -255,21 +269,20 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
           )}
         </div>
 
-        {/* Modal Actions */}
-        <div className="p-4 bg-white border-t border-[#1a1a1a]/10 flex items-center justify-end gap-3 font-mono">
+        <div className="p-4 sm:p-5 bg-white border-t border-[#1a1a1a]/10 flex gap-2 sm:gap-3 font-mono">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs uppercase tracking-wider hover:border-[#1a1a1a] cursor-pointer"
+            className="flex-1 sm:flex-none px-4 py-3 border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs uppercase tracking-wider rounded-lg hover:border-[#1a1a1a] cursor-pointer"
           >
-            CANCEL
+            Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-5 py-2 bg-[#1a1a1a] text-[#f8f7f4] text-xs uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer"
+            className="flex-1 sm:flex-none sm:min-w-36 px-5 py-3 bg-[#1a1a1a] text-white text-xs uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
           >
-            SAVE ENTRY
+            Save check-in
           </button>
         </div>
       </div>

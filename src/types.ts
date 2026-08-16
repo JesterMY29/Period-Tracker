@@ -35,15 +35,21 @@ export interface DetectedPeriod {
 export interface CompletedCycle {
   startDate: string; // Period N start
   nextStartDate: string; // Period N+1 start
-  length: number; // days from startDate up to nextStartDate
+  length: number; // days from startDate to nextStartDate
   periodLength: number; // days in Period N
 }
+
+export type PredictionConfidence = 'Low' | 'Moderate' | 'High';
 
 export interface PredictionResult {
   predictedWindowStart: string; // YYYY-MM-DD
   predictedWindowEnd: string; // YYYY-MM-DD
   expectedStartDate: string; // YYYY-MM-DD
-  marginDays: number; // ± margin (2 to 5)
+  marginDays: number; // ± prediction window
   label: 'Building your baseline' | 'Early estimate' | 'Based on your recent cycle history';
+  confidence: PredictionConfidence;
   completedCycleCount: number;
+  cyclesUsed: number;
+  typicalCycleLength: number;
+  cycleLengthRange: { min: number; max: number } | null;
 }

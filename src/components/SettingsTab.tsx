@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, ArrowRight, Upload, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, Download, Upload } from 'lucide-react';
 import { CycleSettings, DayLog } from '../types';
 
 interface SettingsTabProps {
@@ -10,258 +10,156 @@ interface SettingsTabProps {
   onClearAllData: () => void;
 }
 
-export const SettingsTab: React.FC<SettingsTabProps> = ({
-  settings,
-  onUpdateSettings,
-  logs,
-  onImportLogs,
-  onClearAllData,
-}) => {
+const CYCLE_LENGTH_MIN = 15;
+const CYCLE_LENGTH_MAX = 90;
+const PERIOD_LENGTH_MIN = 1;
+const PERIOD_LENGTH_MAX = 14;
+
+export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSettings, logs, onImportLogs, onClearAllData }) => {
   const [startingCycleLength, setStartingCycleLength] = useState<number>(settings.startingCycleLength || 28);
   const [startingPeriodLength, setStartingPeriodLength] = useState<number>(settings.startingPeriodLength || 5);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    setStartingCycleLength(settings.startingCycleLength || 28);
+    setStartingPeriodLength(settings.startingPeriodLength || 5);
+  }, [settings]);
+
+  const handleSaveSettings = (event: React.FormEvent) => {
+    event.preventDefault();
     onUpdateSettings({
-      startingCycleLength: Math.max(20, Math.min(50, Number(startingCycleLength))),
-      startingPeriodLength: Math.max(1, Math.min(15, Number(startingPeriodLength))),
+      startingCycleLength: Math.max(CYCLE_LENGTH_MIN, Math.min(CYCLE_LENGTH_MAX, Number(startingCycleLength))),
+      startingPeriodLength: Math.max(PERIOD_LENGTH_MIN, Math.min(PERIOD_LENGTH_MAX, Number(startingPeriodLength))),
     });
-    setSaveMessage('Baseline estimates updated successfully.');
-    setTimeout(() => setSaveMessage(null), 3000);
+    setSaveMessage('Prediction baseline updated.');
+    window.setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  // Export JSON Backup
+  const downloadText = (content: string, type: string, filename: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportJSON = () => {
-    const dataStr = JSON.stringify({ settings, logs }, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `auracycle_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText(JSON.stringify({ settings, logs }, null, 2), 'application/json', `auracycle_backup_${new Date().toISOString().split('T')[0]}.json`);
+    setSaveMessage('Backup exported to this device.');
+    window.setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  // Export CSV Data
   const handleExportCSV = () => {
+    const escapeCSV = (value: string) => `"${value.replace(/"/g, '""')}"`;
     const headers = ['Date', 'Flow', 'Mood', 'Symptoms', 'Notes'];
-    const rows = logs.map(l => [
-      l.date,
-      l.flow || 'None',
-      l.mood || '',
-      (l.symptoms || []).join('; '),
-      `"${(l.notes || '').replace(/"/g, '""')}"`,
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `auracycle_logs_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const rows = logs.map(log => [log.date, log.flow || 'None', log.mood || '', (log.symptoms || []).join('; '), log.notes || ''].map(escapeCSV).join(','));
+    downloadText([headers.map(escapeCSV).join(','), ...rows].join('\n'), 'text/csv;charset=utf-8;', `auracycle_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    setSaveMessage('Cycle log exported as CSV.');
+    window.setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  // Import JSON Backup
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = event => {
+    reader.onload = loadEvent => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
+        const parsed = JSON.parse(loadEvent.target?.result as string);
         if (parsed && Array.isArray(parsed.logs)) {
           onImportLogs(parsed.logs, parsed.settings);
-          setSaveMessage(`Successfully imported ${parsed.logs.length} entries.`);
-          setTimeout(() => setSaveMessage(null), 4000);
+          setSaveMessage(`Restored ${parsed.logs.length} logged entries.`);
         } else if (Array.isArray(parsed)) {
           onImportLogs(parsed);
-          setSaveMessage(`Successfully imported ${parsed.length} entries.`);
-          setTimeout(() => setSaveMessage(null), 4000);
+          setSaveMessage(`Restored ${parsed.length} logged entries.`);
         } else {
-          alert('Invalid JSON file format.');
+          setSaveMessage('That backup file is not a supported AuraCycle format.');
         }
-      } catch (err) {
-        alert('Could not parse JSON file.');
+      } catch {
+        setSaveMessage('Could not read that backup file.');
       }
+      window.setTimeout(() => setSaveMessage(null), 4000);
     };
     reader.readAsText(file);
+    event.target.value = '';
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12">
-      {/* Left Column Stack */}
-      <div className="space-y-10">
-        {/* Section 01: Infrastructure */}
-        <section className="space-y-3">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-            [01] Infrastructure
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-normal text-[#1a1a1a]">
-            Privacy Guarantee
-          </h2>
-          <p className="font-sans text-sm text-[#1a1a1a]/70 leading-relaxed max-w-2xl">
-            AuraCycle is 100% private and offline-first. All your health records are stored strictly in your browser's local storage (<code className="font-mono text-xs bg-[#1a1a1a]/5 px-1 py-0.5 border border-[#1a1a1a]/10">localStorage</code>). There are no user accounts, no cloud servers, no AI model processing, and no third-party tracking.
-          </p>
-        </section>
+    <div className="max-w-5xl space-y-8">
+      <section className="space-y-3">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">SETTINGS</span>
+        <h2 className="font-serif text-4xl sm:text-5xl font-normal text-[#1a1a1a]">Your data. Your control.</h2>
+        <p className="font-sans text-sm text-[#1a1a1a]/65 leading-relaxed max-w-2xl">AuraCycle keeps your records on this device. These settings control the starting assumptions used when there is not yet enough cycle history to establish a personal baseline.</p>
+      </section>
 
-        {/* Section 02: Personalization */}
-        <section className="space-y-6 pt-6 border-t border-[#1a1a1a]/10">
-          <div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-              [02] Personalization
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal text-[#1a1a1a]">
-              Starting Baseline Estimates
-            </h2>
-          </div>
+      {saveMessage && <div role="status" className="p-3 bg-[#f8f7f4] border border-[#1a1a1a]/10 text-xs font-mono text-[#c47c7c]">{saveMessage}</div>}
 
-          <form onSubmit={handleSaveSettings} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-              <div className="space-y-2">
-                <label className="block font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]">
-                  Starting Cycle Length (Days)
-                </label>
-                <input
-                  type="number"
-                  min={20}
-                  max={50}
-                  value={startingCycleLength}
-                  onChange={e => setStartingCycleLength(Number(e.target.value))}
-                  className="w-full bg-transparent border-b border-[#1a1a1a] py-2 font-serif text-2xl text-[#1a1a1a] outline-none focus:border-[#c47c7c]"
-                />
-                <span className="font-sans text-xs text-[#1a1a1a]/60 block mt-1">
-                  Default cycle estimate used before establishing your baseline.
-                </span>
+      <section className="p-5 sm:p-7 bg-white border border-[#1a1a1a]/10 space-y-6">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block mb-2">PREDICTION BASELINE</span>
+          <h3 className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">Starting assumptions</h3>
+          <p className="mt-2 font-sans text-xs text-[#1a1a1a]/60 leading-relaxed max-w-2xl">Once AuraCycle has enough completed cycles, your recorded history becomes the primary basis for prediction. These values mainly help when your history is still limited.</p>
+        </div>
+
+        <form onSubmit={handleSaveSettings} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <label className="space-y-2">
+              <span className="block font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]">Typical cycle length</span>
+              <div className="flex items-baseline gap-2">
+                <input type="number" min={CYCLE_LENGTH_MIN} max={CYCLE_LENGTH_MAX} inputMode="numeric" value={startingCycleLength} onChange={event => setStartingCycleLength(Number(event.target.value))} className="w-24 bg-transparent border-b border-[#1a1a1a] py-2 font-serif text-3xl text-[#1a1a1a] outline-none focus:border-[#c47c7c]" />
+                <span className="font-mono text-xs text-[#1a1a1a]/50">days</span>
               </div>
+              <span className="block font-sans text-xs text-[#1a1a1a]/55">Allowed range: {CYCLE_LENGTH_MIN}–{CYCLE_LENGTH_MAX} days.</span>
+            </label>
 
-              <div className="space-y-2">
-                <label className="block font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]">
-                  Starting Period Length (Days)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={15}
-                  value={startingPeriodLength}
-                  onChange={e => setStartingPeriodLength(Number(e.target.value))}
-                  className="w-full bg-transparent border-b border-[#1a1a1a] py-2 font-serif text-2xl text-[#1a1a1a] outline-none focus:border-[#c47c7c]"
-                />
-                <span className="font-sans text-xs text-[#1a1a1a]/60 block mt-1">
-                  Default estimated duration of bleeding.
-                </span>
+            <label className="space-y-2">
+              <span className="block font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]">Typical period length</span>
+              <div className="flex items-baseline gap-2">
+                <input type="number" min={PERIOD_LENGTH_MIN} max={PERIOD_LENGTH_MAX} inputMode="numeric" value={startingPeriodLength} onChange={event => setStartingPeriodLength(Number(event.target.value))} className="w-24 bg-transparent border-b border-[#1a1a1a] py-2 font-serif text-3xl text-[#1a1a1a] outline-none focus:border-[#c47c7c]" />
+                <span className="font-mono text-xs text-[#1a1a1a]/50">days</span>
               </div>
-            </div>
-
-            {saveMessage && (
-              <div className="p-3 bg-[#f8f7f4] border border-[#1a1a1a]/10 text-xs font-mono text-[#c47c7c]">
-                {saveMessage}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="bg-[#1a1a1a] text-[#f8f7f4] px-6 py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              SAVE BASELINE ESTIMATES
-            </button>
-          </form>
-        </section>
-      </div>
-
-      {/* Right Column Sidebar */}
-      <aside className="space-y-8 border-t lg:border-t-0 lg:border-l border-[#1a1a1a]/10 pt-8 lg:pt-0 lg:pl-8 flex flex-col justify-between">
-        <div className="space-y-4">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-            Data Management
-          </span>
-
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={handleExportJSON}
-              className="w-full flex items-center justify-between p-3.5 bg-white border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-xs uppercase tracking-wider cursor-pointer text-left"
-            >
-              <span>EXPORT BACKUP (JSON)</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#1a1a1a]/60" />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              className="w-full flex items-center justify-between p-3.5 bg-white border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-xs uppercase tracking-wider cursor-pointer text-left"
-            >
-              <span>EXPORT LOGS (CSV)</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#1a1a1a]/60" />
-            </button>
-
-            <label className="w-full flex items-center justify-between p-3.5 bg-white border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-xs uppercase tracking-wider cursor-pointer text-left">
-              <span>RESTORE BACKUP (JSON)</span>
-              <Upload className="w-3.5 h-3.5 text-[#1a1a1a]/60" />
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+              <span className="block font-sans text-xs text-[#1a1a1a]/55">Allowed range: {PERIOD_LENGTH_MIN}–{PERIOD_LENGTH_MAX} days.</span>
             </label>
           </div>
+
+          <button type="submit" className="bg-[#1a1a1a] text-[#f8f7f4] px-6 py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity cursor-pointer">SAVE BASELINE</button>
+        </form>
+      </section>
+
+      <section className="p-5 sm:p-7 bg-white border border-[#1a1a1a]/10 space-y-6">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block mb-2">PRIVACY & DATA</span>
+          <h3 className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">Keep, move, or remove your records</h3>
+          <p className="mt-2 font-sans text-xs text-[#1a1a1a]/60 leading-relaxed max-w-2xl">Your cycle records stay in this browser's local storage. AuraCycle does not require an account or cloud sync for these features.</p>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button type="button" onClick={handleExportJSON} className="flex items-center justify-between gap-3 p-4 border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-[11px] uppercase tracking-wider text-left cursor-pointer"><span>Backup JSON</span><Download className="w-4 h-4 shrink-0" /></button>
+          <button type="button" onClick={handleExportCSV} className="flex items-center justify-between gap-3 p-4 border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-[11px] uppercase tracking-wider text-left cursor-pointer"><span>Export CSV</span><Download className="w-4 h-4 shrink-0" /></button>
+          <label className="flex items-center justify-between gap-3 p-4 border border-[#1a1a1a]/10 hover:border-[#1a1a1a] transition-colors font-mono text-[11px] uppercase tracking-wider text-left cursor-pointer"><span>Restore JSON</span><Upload className="w-4 h-4 shrink-0" /><input type="file" accept=".json,application/json" onChange={handleFileUpload} className="sr-only" /></label>
+        </div>
+        <div className="flex items-center justify-between gap-4 pt-2 font-mono text-[11px] text-[#1a1a1a]/50"><span>{logs.length} logged {logs.length === 1 ? 'day' : 'days'} stored on this device.</span><span>No account required.</span></div>
+      </section>
 
-        {/* Danger Zone */}
-        <div className="pt-8 border-t border-[#1a1a1a]/10 space-y-4">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-            Critical Actions
-          </span>
-          <h3 className="font-serif text-2xl text-[#1a1a1a]">
-            Clear All Local Data
-          </h3>
-          <p className="font-sans text-xs text-[#1a1a1a]/70 leading-relaxed">
-            Permanently delete all stored cycle logs and custom settings from this browser's local storage.
-          </p>
-
-          {!showDeleteConfirm ? (
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full p-3.5 bg-transparent border border-[#c47c7c] text-[#c47c7c] hover:bg-[#c47c7c] hover:text-[#f8f7f4] font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer"
-            >
-              DELETE ALL DATA
-            </button>
-          ) : (
-            <div className="p-4 bg-white border border-[#c47c7c] space-y-3">
-              <div className="flex items-center gap-2 font-mono text-xs text-[#c47c7c]">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Delete all {logs.length} logged records?</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClearAllData();
-                    setShowDeleteConfirm(false);
-                    setSaveMessage('All local data cleared successfully.');
-                  }}
-                  className="w-full p-2.5 bg-[#c47c7c] text-[#f8f7f4] font-mono text-xs uppercase tracking-wider cursor-pointer"
-                >
-                  YES, DELETE EVERYTHING
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="w-full p-2.5 bg-white border border-[#1a1a1a]/20 text-[#1a1a1a] font-mono text-xs uppercase tracking-wider cursor-pointer"
-                >
-                  CANCEL
-                </button>
-              </div>
+      <section className="p-5 sm:p-7 border border-[#c47c7c]/40 space-y-5">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block mb-2">DANGER ZONE</span>
+          <h3 className="font-serif text-2xl text-[#1a1a1a]">Clear all local data</h3>
+          <p className="mt-2 font-sans text-xs text-[#1a1a1a]/65 leading-relaxed max-w-2xl">This permanently removes cycle logs and custom prediction settings from this browser. Export a backup first if you may want the records later.</p>
+        </div>
+        {!showDeleteConfirm ? (
+          <button type="button" onClick={() => setShowDeleteConfirm(true)} className="w-full sm:w-auto p-3.5 bg-transparent border border-[#c47c7c] text-[#c47c7c] hover:bg-[#c47c7c] hover:text-[#f8f7f4] font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer">DELETE ALL DATA</button>
+        ) : (
+          <div className="p-4 bg-white border border-[#c47c7c] space-y-4 max-w-xl" role="alert">
+            <div className="flex items-start gap-3 font-mono text-xs text-[#c47c7c]"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>This will permanently remove all {logs.length} logged {logs.length === 1 ? 'day' : 'days'} and your saved settings.</span></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="button" onClick={() => { onClearAllData(); setShowDeleteConfirm(false); setSaveMessage('All local data cleared.'); }} className="p-3 bg-[#c47c7c] text-[#f8f7f4] font-mono text-xs uppercase tracking-wider cursor-pointer">YES, DELETE</button>
+              <button type="button" onClick={() => setShowDeleteConfirm(false)} className="p-3 bg-white border border-[#1a1a1a]/20 text-[#1a1a1a] font-mono text-xs uppercase tracking-wider cursor-pointer">CANCEL</button>
             </div>
-          )}
-        </div>
-      </aside>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

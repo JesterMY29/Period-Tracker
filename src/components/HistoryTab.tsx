@@ -1,13 +1,7 @@
 import React from 'react';
-import { Activity, BarChart2, Info, Calendar } from 'lucide-react';
+import { Activity, BarChart3, CalendarDays, Info } from 'lucide-react';
 import { DayLog } from '../types';
-import {
-  detectPeriods,
-  getCompletedCycles,
-  calculateSymptomFrequencies,
-  calculateMoodFrequencies,
-  formatDisplayDate,
-} from '../lib/cycleUtils';
+import { detectPeriods, getCompletedCycles, calculateSymptomFrequencies, calculateMoodFrequencies, formatDisplayDate } from '../lib/cycleUtils';
 
 interface HistoryTabProps {
   logs: DayLog[];
@@ -15,211 +9,106 @@ interface HistoryTabProps {
 
 export const HistoryTab: React.FC<HistoryTabProps> = ({ logs }) => {
   const periods = detectPeriods(logs);
-  const completedCycles = getCompletedCycles(logs);
+  const cycles = getCompletedCycles(logs);
+  const symptoms = calculateSymptomFrequencies(logs);
+  const moods = calculateMoodFrequencies(logs);
 
-  const symptomFreq = calculateSymptomFrequencies(logs);
-  const moodFreq = calculateMoodFrequencies(logs);
-
-  // Stats calculation
-  const totalCompletedCycles = completedCycles.length;
-
-  let avgCycleLength = 0;
-  let minCycleLength = 0;
-  let maxCycleLength = 0;
-
-  if (totalCompletedCycles > 0) {
-    const totalDays = completedCycles.reduce((acc, c) => acc + c.length, 0);
-    avgCycleLength = Math.round(totalDays / totalCompletedCycles);
-    const lengths = completedCycles.map(c => c.length);
-    minCycleLength = Math.min(...lengths);
-    maxCycleLength = Math.max(...lengths);
-  }
-
-  let avgPeriodLength = 0;
-  if (periods.length > 0) {
-    const totalPeriodDays = periods.reduce((acc, p) => acc + p.length, 0);
-    avgPeriodLength = Math.round(totalPeriodDays / periods.length);
-  }
+  const averageCycle = cycles.length ? Math.round(cycles.reduce((sum, cycle) => sum + cycle.length, 0) / cycles.length) : null;
+  const averagePeriod = periods.length ? Math.round(periods.reduce((sum, period) => sum + period.length, 0) / periods.length) : null;
+  const cycleLengths = cycles.map(cycle => cycle.length);
+  const cycleRange = cycleLengths.length ? `${Math.min(...cycleLengths)}–${Math.max(...cycleLengths)} days` : '—';
 
   return (
-    <div className="space-y-8 font-sans">
-      {/* Disclaimer Callout */}
-      <div className="border border-[#1a1a1a]/10 bg-white p-4 sm:p-5 flex items-start gap-3">
-        <Info className="w-4 h-4 text-[#c47c7c] shrink-0 mt-0.5" />
-        <div className="font-mono text-xs text-[#1a1a1a]/80 leading-relaxed">
-          <span className="font-bold text-[#1a1a1a]">[FACTUAL DATA SUMMARY]</span> The statistics below represent strictly factual summaries of your logged entries stored in your browser. They are not health assessments or medical diagnoses.
-        </div>
+    <div className="space-y-5 sm:space-y-7 font-sans">
+      <section>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">History</p>
+        <h1 className="font-serif text-3xl sm:text-4xl mt-1">Your cycle record</h1>
+        <p className="font-mono text-[11px] text-[#1a1a1a]/55 mt-2">A factual summary of the entries you have recorded on this device.</p>
+      </section>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          ['Typical cycle', averageCycle ? `${averageCycle} days` : '—', `${cycles.length} completed`],
+          ['Typical period', averagePeriod ? `${averagePeriod} days` : '—', `${periods.length} recorded`],
+          ['Cycle range', cycleRange, 'Shortest–longest'],
+          ['Logged days', `${logs.length}`, 'Recorded entries'],
+        ].map(([label, value, detail]) => (
+          <div key={label} className="card-refined p-4 sm:p-5">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-[#c47c7c]">{label}</p>
+            <p className="font-serif text-xl sm:text-2xl mt-2">{value}</p>
+            <p className="font-mono text-[10px] text-[#1a1a1a]/50 mt-1">{detail}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Factual Metrics Summary Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Avg Cycle Length */}
-        <div className="card-refined p-5 space-y-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-            AVG CYCLE LENGTH
-          </span>
-          <div className="font-serif text-2xl sm:text-3xl font-medium text-[#1a1a1a]">
-            {totalCompletedCycles > 0 ? `${avgCycleLength} days` : 'N/A'}
-          </div>
-          <span className="font-mono text-[10px] text-[#1a1a1a]/60 block">
-            {totalCompletedCycles} completed cycle{totalCompletedCycles === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        {/* Avg Period Length */}
-        <div className="card-refined p-5 space-y-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-            AVG PERIOD LENGTH
-          </span>
-          <div className="font-serif text-2xl sm:text-3xl font-medium text-[#1a1a1a]">
-            {periods.length > 0 ? `${avgPeriodLength} days` : 'N/A'}
-          </div>
-          <span className="font-mono text-[10px] text-[#1a1a1a]/60 block">
-            {periods.length} logged period{periods.length === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        {/* Shortest / Longest Cycle */}
-        <div className="card-refined p-5 space-y-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/70 block">
-            CYCLE RANGE
-          </span>
-          <div className="font-serif text-xl sm:text-2xl font-medium text-[#1a1a1a]">
-            {totalCompletedCycles > 0 ? `${minCycleLength} – ${maxCycleLength} days` : 'N/A'}
-          </div>
-          <span className="font-mono text-[10px] text-[#1a1a1a]/60 block">
-            Shortest vs Longest
-          </span>
-        </div>
-
-        {/* Total Logs */}
-        <div className="card-refined p-5 space-y-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/70 block">
-            TOTAL DAYS LOGGED
-          </span>
-          <div className="font-serif text-2xl sm:text-3xl font-medium text-[#1a1a1a]">
-            {logs.length}
-          </div>
-          <span className="font-mono text-[10px] text-[#1a1a1a]/60 block">
-            Total recorded entries
-          </span>
-        </div>
-      </div>
-
-      {/* Recorded Cycles History */}
-      <div className="card-refined p-6 sm:p-8 space-y-4">
-        <div className="flex items-center gap-3 border-b border-[#1a1a1a]/10 pb-3">
-          <Calendar className="w-4 h-4 text-[#c47c7c]" />
+      <section className="card-refined p-5 sm:p-7">
+        <div className="flex items-start gap-3 pb-4 border-b border-[#1a1a1a]/10">
+          <CalendarDays className="w-5 h-5 text-[#c47c7c] mt-0.5" aria-hidden="true" />
           <div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-              [02] Timeline
-            </span>
-            <h3 className="font-serif text-xl sm:text-2xl text-[#1a1a1a]">
-              Recorded Cycle History
-            </h3>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Completed cycles</p>
+            <h2 className="font-serif text-xl sm:text-2xl mt-1">Cycle history</h2>
           </div>
         </div>
 
-        {completedCycles.length > 0 ? (
-          <div className="space-y-3">
-            {[...completedCycles].reverse().map((cycle, idx) => (
-              <div
-                key={idx}
-                className="p-4 bg-[#f8f7f4] border border-[#1a1a1a]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-xs"
-              >
+        {cycles.length ? (
+          <div className="divide-y divide-[#1a1a1a]/10">
+            {[...cycles].reverse().map((cycle, index) => (
+              <div key={`${cycle.startDate}-${cycle.nextStartDate}`} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
                 <div>
-                  <div className="font-semibold text-[#1a1a1a]">
-                    Cycle #{completedCycles.length - idx}: {formatDisplayDate(cycle.startDate)} – {formatDisplayDate(cycle.nextStartDate)}
-                  </div>
-                  <div className="text-[#1a1a1a]/60 text-[11px] mt-0.5">
-                    Period duration: {cycle.periodLength} days
-                  </div>
+                  <p className="text-xs font-semibold">Cycle #{cycles.length - index}</p>
+                  <p className="text-[10px] text-[#1a1a1a]/55 mt-1">{formatDisplayDate(cycle.startDate)} → {formatDisplayDate(cycle.nextStartDate)}</p>
                 </div>
-
-                <div className="px-3 py-1 bg-[#1a1a1a] text-[#f8f7f4] font-medium text-center">
-                  {cycle.length} DAYS
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="px-2.5 py-1 bg-[#1a1a1a] text-[#f8f7f4]">{cycle.length} days</span>
+                  <span className="px-2.5 py-1 bg-[#f8f7f4] border border-[#1a1a1a]/10">Period {cycle.periodLength} days</span>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-6 bg-[#f8f7f4] border border-dashed border-[#1a1a1a]/20 text-center font-mono text-xs text-[#1a1a1a]/70">
-            No completed cycles recorded yet. A cycle is measured from one period start date to the next period start date.
-          </div>
+          <div className="py-8 text-center font-mono text-xs text-[#1a1a1a]/55">Complete at least two period starts to see cycle history.</div>
         )}
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <section className="card-refined p-5 sm:p-7">
+          <div className="flex items-center gap-3 pb-4 border-b border-[#1a1a1a]/10">
+            <Activity className="w-5 h-5 text-[#c47c7c]" aria-hidden="true" />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Symptoms</p>
+              <h2 className="font-serif text-xl mt-1">Most logged</h2>
+            </div>
+          </div>
+          <div className="pt-4 space-y-2">
+            {symptoms.length ? symptoms.slice(0, 8).map(({ symptom, count }) => (
+              <div key={symptom} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-[#f8f7f4] border border-[#1a1a1a]/10 font-mono text-xs">
+                <span>{symptom}</span><span className="px-2 py-0.5 bg-[#c47c7c] text-[#f8f7f4] text-[10px]">{count}</span>
+              </div>
+            )) : <p className="font-mono text-xs text-[#1a1a1a]/50 py-3">No symptoms logged yet.</p>}
+          </div>
+        </section>
+
+        <section className="card-refined p-5 sm:p-7">
+          <div className="flex items-center gap-3 pb-4 border-b border-[#1a1a1a]/10">
+            <BarChart3 className="w-5 h-5 text-[#1a1a1a]" aria-hidden="true" />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Mood</p>
+              <h2 className="font-serif text-xl mt-1">Most logged</h2>
+            </div>
+          </div>
+          <div className="pt-4 space-y-2">
+            {moods.length ? moods.slice(0, 8).map(({ mood, count }) => (
+              <div key={mood} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-[#f8f7f4] border border-[#1a1a1a]/10 font-mono text-xs">
+                <span>{mood}</span><span className="px-2 py-0.5 bg-[#1a1a1a] text-[#f8f7f4] text-[10px]">{count}</span>
+              </div>
+            )) : <p className="font-mono text-xs text-[#1a1a1a]/50 py-3">No moods logged yet.</p>}
+          </div>
+        </section>
       </div>
 
-      {/* Symptom & Mood Frequencies */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Symptom Frequency */}
-        <div className="card-refined p-6 sm:p-8 space-y-4">
-          <div className="flex items-center gap-2 border-b border-[#1a1a1a]/10 pb-3">
-            <Activity className="w-4 h-4 text-[#c47c7c]" />
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-                [03] Symptoms
-              </span>
-              <h4 className="font-serif text-lg text-[#1a1a1a]">
-                Logged Symptom Frequency
-              </h4>
-            </div>
-          </div>
-
-          {symptomFreq.length > 0 ? (
-            <div className="space-y-2 font-mono text-xs">
-              {symptomFreq.map(({ symptom, count }) => (
-                <div
-                  key={symptom}
-                  className="flex items-center justify-between p-2.5 bg-[#f8f7f4] border border-[#1a1a1a]/10"
-                >
-                  <span className="text-[#1a1a1a] font-medium">{symptom}</span>
-                  <span className="px-2 py-0.5 bg-[#c47c7c] text-[#f8f7f4] font-medium text-[11px]">
-                    {count} {count === 1 ? 'time' : 'times'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-[#f8f7f4] border border-dashed border-[#1a1a1a]/20 text-center font-mono text-xs text-[#1a1a1a]/60">
-              No symptoms logged yet.
-            </div>
-          )}
-        </div>
-
-        {/* Mood Frequency */}
-        <div className="card-refined p-6 sm:p-8 space-y-4">
-          <div className="flex items-center gap-2 border-b border-[#1a1a1a]/10 pb-3">
-            <BarChart2 className="w-4 h-4 text-[#1a1a1a]" />
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c] block">
-                [04] Moods
-              </span>
-              <h4 className="font-serif text-lg text-[#1a1a1a]">
-                Logged Mood Frequency
-              </h4>
-            </div>
-          </div>
-
-          {moodFreq.length > 0 ? (
-            <div className="space-y-2 font-mono text-xs">
-              {moodFreq.map(({ mood, count }) => (
-                <div
-                  key={mood}
-                  className="flex items-center justify-between p-2.5 bg-[#f8f7f4] border border-[#1a1a1a]/10"
-                >
-                  <span className="text-[#1a1a1a] font-medium">{mood}</span>
-                  <span className="px-2 py-0.5 bg-[#1a1a1a] text-[#f8f7f4] font-medium text-[11px]">
-                    {count} {count === 1 ? 'time' : 'times'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-[#f8f7f4] border border-dashed border-[#1a1a1a]/20 text-center font-mono text-xs text-[#1a1a1a]/60">
-              No moods logged yet.
-            </div>
-          )}
-        </div>
+      <div className="flex items-start gap-2 font-mono text-[10px] leading-relaxed text-[#1a1a1a]/45">
+        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+        <p>These statistics summarize recorded data. They are not health assessments or medical diagnoses.</p>
       </div>
     </div>
   );
