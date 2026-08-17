@@ -20,9 +20,10 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ logs, settings }) => {
   const cycleRange = prediction?.cycleLengthRange
     ? `${prediction.cycleLengthRange.min}–${prediction.cycleLengthRange.max} days`
     : '—';
+  const typicalCycle = prediction?.cyclesUsed ? `${prediction.typicalCycleLength} days` : '—';
 
   const summary = [
-    ['Typical cycle', prediction?.typicalCycleLength ? `${prediction.typicalCycleLength} days` : '—', prediction?.cyclesUsed ? `Based on ${prediction.cyclesUsed} recent cycles` : 'Not enough cycle history'],
+    ['Typical cycle', typicalCycle, prediction?.cyclesUsed ? `Based on ${prediction.cyclesUsed} recent cycles` : 'Not enough cycle history'],
     ['Observed range', cycleRange, prediction?.cycleLengthRange ? 'Shortest–longest recent cycle' : 'Build history to compare'],
     ['Average period', averagePeriod ? `${averagePeriod} days` : '—', `${periods.length} recorded period${periods.length === 1 ? '' : 's'}`],
     ['Logged days', `${logs.length}`, 'Recorded entries on this device'],
