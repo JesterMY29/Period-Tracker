@@ -90,16 +90,24 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
         }
 
         const result = parseBackup(parsed);
-        if (!result.ok) {
-          const messages: Record<typeof result.error, string> = {
-            'invalid-json': 'That file is not valid JSON. Nothing was changed.',
-            'unsupported-format': 'That file is not an AuraCycle backup. Nothing was changed.',
-            'unsupported-version': 'That AuraCycle backup version is not supported. Nothing was changed.',
-            'invalid-exported-at': 'That backup has an invalid export timestamp. Nothing was changed.',
-            'invalid-settings': 'That backup contains invalid prediction settings. Nothing was changed.',
-            'invalid-logs': 'That backup contains invalid cycle records. Nothing was changed.',
-          };
-          showTemporaryMessage(messages[result.error]);
+        if (result.ok === false) {
+          const message = (() => {
+            switch (result.error) {
+              case 'invalid-json':
+                return 'That file is not valid JSON. Nothing was changed.';
+              case 'unsupported-format':
+                return 'That file is not an AuraCycle backup. Nothing was changed.';
+              case 'unsupported-version':
+                return 'That AuraCycle backup version is not supported. Nothing was changed.';
+              case 'invalid-exported-at':
+                return 'That backup has an invalid export timestamp. Nothing was changed.';
+              case 'invalid-settings':
+                return 'That backup contains invalid prediction settings. Nothing was changed.';
+              case 'invalid-logs':
+                return 'That backup contains invalid cycle records. Nothing was changed.';
+            }
+          })();
+          showTemporaryMessage(message);
           return;
         }
 
