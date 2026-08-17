@@ -57,7 +57,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 font-sans">
-      {/* Primary status */}
+      {/* Primary home outcome: cycle status + next-period estimate */}
       <section className="card-refined overflow-hidden">
         <div className="p-5 sm:p-7 bg-[#1a1a1a] text-[#f8f7f4]">
           <div className="flex items-start justify-between gap-4">
@@ -76,31 +76,44 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 bg-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 sm:p-7 bg-white">
+          <div className="flex flex-col gap-5">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Next period</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Estimated next period</p>
               {prediction ? (
                 <>
-                  <p className="font-serif text-2xl sm:text-3xl mt-1 text-[#1a1a1a]">
-                    {formatShortDate(prediction.predictedWindowStart)} – {formatShortDate(prediction.predictedWindowEnd)}
+                  <p className="font-serif text-3xl sm:text-4xl mt-1 text-[#1a1a1a]">
+                    {formatDisplayDate(prediction.expectedStartDate)}
                   </p>
                   <p className="font-mono text-[11px] text-[#1a1a1a]/60 mt-1">
-                    {prediction.confidence} confidence · typical cycle {prediction.typicalCycleLength} days
+                    Prediction window: {formatShortDate(prediction.predictedWindowStart)} – {formatShortDate(prediction.predictedWindowEnd)}
                   </p>
                 </>
               ) : (
                 <p className="font-serif text-xl mt-1 text-[#1a1a1a]">Not enough history yet</p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenLogModal(todayStr)}
-              className="bg-[#c47c7c] text-[#f8f7f4] px-5 py-3 font-mono text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-              {todayLog ? 'Edit details' : 'More details'}
-            </button>
+
+            {prediction ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border border-[#1a1a1a]/10 p-3 bg-[#f8f7f4]">
+                  <span className="font-mono text-[10px] text-[#1a1a1a]/55 block">Confidence</span>
+                  <strong className="font-mono text-sm mt-1 block">{prediction.confidence}</strong>
+                </div>
+                <div className="border border-[#1a1a1a]/10 p-3 bg-[#f8f7f4]">
+                  <span className="font-mono text-[10px] text-[#1a1a1a]/55 block">Data basis</span>
+                  <strong className="font-mono text-sm mt-1 block">
+                    {prediction.cyclesUsed ? `${prediction.cyclesUsed} recent cycles` : 'Starting estimate'}
+                  </strong>
+                </div>
+              </div>
+            ) : null}
+
+            <p className="font-mono text-[11px] leading-relaxed text-[#1a1a1a]/65">
+              {prediction
+                ? `${confidenceCopy[prediction.confidence]} This is a mathematical estimate from recorded period starts, not medical advice.`
+                : 'Log period starts to build a personal prediction baseline.'}
+            </p>
           </div>
         </div>
       </section>
@@ -151,56 +164,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </button>
       </section>
 
-      {/* Prediction detail */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="card-refined p-5 sm:p-6 lg:col-span-2">
-          <div className="flex items-center justify-between gap-3 border-b border-[#1a1a1a]/10 pb-3">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Prediction</p>
-              <h2 className="font-serif text-xl sm:text-2xl mt-1">Your personal estimate</h2>
-            </div>
-            {prediction && (
-              <span className="font-mono text-[10px] uppercase tracking-wider bg-[#1a1a1a] text-[#f8f7f4] px-2 py-1">
-                {prediction.confidence}
-              </span>
-            )}
-          </div>
-
-          {prediction ? (
-            <div className="pt-5 space-y-4">
-              <div className="p-4 bg-[#f8f7f4] border border-[#1a1a1a]/10">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/55">Expected start</p>
-                <p className="font-serif text-2xl mt-1">{formatDisplayDate(prediction.expectedStartDate)}</p>
-                <p className="font-mono text-[11px] text-[#c47c7c] mt-1">Estimated window ±{prediction.marginDays} days</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 font-mono text-[11px]">
-                <div className="border border-[#1a1a1a]/10 p-3 bg-white">
-                  <span className="text-[#1a1a1a]/55 block">Recent cycles</span>
-                  <strong className="text-sm">{prediction.cyclesUsed || 'Starting estimate'}</strong>
-                </div>
-                <div className="border border-[#1a1a1a]/10 p-3 bg-white">
-                  <span className="text-[#1a1a1a]/55 block">Typical length</span>
-                  <strong className="text-sm">{prediction.typicalCycleLength} days</strong>
-                </div>
-              </div>
-              <p className="font-mono text-[11px] leading-relaxed text-[#1a1a1a]/65">
-                {confidenceCopy[prediction.confidence]} This is a mathematical estimate from recorded period starts, not medical advice.
-              </p>
-            </div>
-          ) : (
-            <div className="pt-5">
-              <div className="p-5 border border-dashed border-[#1a1a1a]/20 bg-[#f8f7f4]">
-                <p className="font-mono text-xs">Log period starts to build a personal prediction baseline.</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="card-refined p-5 sm:p-6 flex flex-col justify-between gap-6">
+      {/* Compact daily record */}
+      <section className="card-refined p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">Today</p>
-            <h2 className="font-serif text-xl mt-1">Daily record</h2>
-            <div className="mt-5 flex items-center gap-3">
+            <h2 className="font-serif text-xl sm:text-2xl mt-1">Daily record</h2>
+            <div className="mt-4 flex items-center gap-3">
               {todayLog ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-[#c47c7c]" aria-hidden="true" />
@@ -223,7 +193,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           <button
             type="button"
             onClick={() => onOpenLogModal(todayStr)}
-            className="btn-secondary w-full cursor-pointer"
+            className="btn-secondary w-full sm:w-auto cursor-pointer"
           >
             {todayLog ? 'Edit today’s entry' : 'Add today’s entry'}
           </button>
