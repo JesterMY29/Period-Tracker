@@ -42,6 +42,12 @@ function readInitialAppTab(): AppTab {
   return resolveAppTab(window.location.hash.slice(1));
 }
 
+function persistSnapshot(settings: CycleSettings, logs: DayLog[]): boolean {
+  const settingsSaved = writeStorageItem(STORAGE_KEY_SETTINGS, serializeSettings(settings));
+  const logsSaved = writeStorageItem(STORAGE_KEY_LOGS, serializeLogs(logs));
+  return settingsSaved && logsSaved;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>(readInitialAppTab);
   const [settings, setSettings] = useState<CycleSettings>(readStoredSettings);
@@ -51,10 +57,12 @@ export default function App() {
   const [storageWriteFailed, setStorageWriteFailed] = useState(false);
 
   useEffect(() => {
-    const settingsSaved = writeStorageItem(STORAGE_KEY_SETTINGS, serializeSettings(settings));
-    const logsSaved = writeStorageItem(STORAGE_KEY_LOGS, serializeLogs(logs));
-    setStorageWriteFailed(!(settingsSaved && logsSaved));
+    setStorageWriteFailed(!persistSnapshot(settings, logs));
   }, [settings, logs]);
+
+  const retryPersistence = () => {
+    setStorageWriteFailed(!persistSnapshot(settings, logs));
+  };
 
   const todayStr = formatDate(new Date());
 
@@ -112,7 +120,14 @@ export default function App() {
           role="alert"
           className="w-full border-b border-[#c47c7c]/30 bg-[#fff8f7] px-4 py-3 text-center text-xs text-[#6f3f3f]"
         >
-          Your latest changes could not be saved to this device. Keep AuraCycle open and try again after checking available browser storage.
+          <span>Your latest changes could not be saved to this device.</span>{' '}
+          <button
+            type="button"
+            onClick={retryPersistence}
+            className="font-semibold underline underline-offset-2 cursor-pointer"
+          >
+            Retry save
+          </button>
         </div>
       )}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 outline-none">
