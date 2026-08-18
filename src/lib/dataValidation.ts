@@ -15,6 +15,25 @@ const SYMPTOMS: SymptomType[] = [
 ];
 
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const CYCLE_LENGTH_MIN = 15;
+const CYCLE_LENGTH_MAX = 90;
+const PERIOD_LENGTH_MIN = 1;
+const PERIOD_LENGTH_MAX = 14;
+
+export const AURACYCLE_BACKUP_FORMAT = 'auracycle-backup';
+export const AURACYCLE_BACKUP_VERSION = 1;
+
+export interface AuraCycleBackup {
+  format: typeof AURACYCLE_BACKUP_FORMAT;
+  version: typeof AURACYCLE_BACKUP_VERSION;
+  exportedAt: string;
+  settings: CycleSettings;
+  logs: DayLog[];
+}
+
+export type BackupParseResult =
+  | { ok: true; backup: AuraCycleBackup; legacy: boolean }
+  | { ok: false; error: 'invalid-json' | 'unsupported-format' | 'unsupported-version' | 'invalid-exported-at' | 'invalid-settings' | 'invalid-logs' };
 
 function isValidDateString(value: unknown): value is string {
   if (typeof value !== 'string') return false;
@@ -77,8 +96,77 @@ export function normalizeSettings(value: unknown, fallback: CycleSettings): Cycl
   const period = Number(candidate.startingPeriodLength);
 
   return {
-    startingCycleLength: Number.isFinite(cycle) && cycle >= 15 && cycle <= 90 ? Math.round(cycle) : fallback.startingCycleLength,
-    startingPeriodLength: Number.isFinite(period) && period >= 1 && period <= 14 ? Math.round(period) : fallback.startingPeriodLength,
+    startingCycleLength: Number.isFinite(cycle) && cycle >= CYCLE_LENGTH_MIN && cycle <= CYCLE_LENGTH_MAX ? Math.round(cycle) : fallback.startingCycleLength,
+    startingPeriodLength: Number.isFinite(period) && period >= PERIOD_LENGTH_MIN && period <= PERIOD_LENGTH_MAX ? Math.round(period) : fallback.startingPeriodLength,
+  };
+}
+
+function isStrictSettings(value: unknown): value is CycleSettings {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<CycleSettings>;
+  return (
+    typeof candidate.startingCycleLength === 'number' &&
+    Number.isInteger(candidate.startingCycleLength) &&
+    candidate.startingCycleLength >= CYCLE_LENGTH_MIN &&
+    candidate.startingCycleLength <= CYCLE_LENGTH_MAX &&
+    typeof candidate.startingPeriodLength === 'number' &&
+    Number.isInteger(candidate.startingPeriodLength) &&
+    candidate.startingPeriodLength >= PERIOD_LENGTH_MIN &&
+    candidate.startingPeriodLength <= PERIOD_LENGTH_MAX
+  );
+}
+
+function isStrictLogs(value: unknown): value is DayLog[] {
+  if (!Array.isArray(value)) return false;
+  const normalized = normalizeLogs(value);
+  if (normalized.length !== value.length) return false;
+  return value.every((item, index) => {
+    const normalizedItem = normalizeDayLog(item);
+    return normalizedItem !== null && JSON.stringify(normalizedItem) === JSON.stringify(normalized[index]);
+  });
+}
+
+export function createBackup(settings: CycleSettings, logs: DayLog[], exportedAt = new Date().toISOString()): AuraCycleBackup {
+  return {
+    format: AURACYCLE_BACKUP_FORMAT,
+    version: AURACYCLE_BACKUP_VERSION,
+    exportedAt,
+    settings: normalizeSettings(settings, settings),
+    logs: normalizeLogs(logs),
+  };
+}
+
+export function serializeBackup(settings: CycleSettings, logs: DayLog[], exportedAt?: string): string {
+  return JSON.stringify(createBackup(settings, logs, exportedAt), null, 2);
+}
+
+export function parseBackup(value: unknown): BackupParseResult {
+  if (!value || typeof value !== 'object') return { ok: false, error: 'unsupported-format' };
+  const candidate = value as Record<string, unknown>;
+
+  const isLegacy = candidate.format === undefined && candidate.version === undefined;
+  if (!isLegacy && candidate.format !== AURACYCLE_BACKUP_FORMAT) return { ok: false, error: 'unsupported-format' };
+  if (!isLegacy && candidate.version !== AURACYCLE_BACKUP_VERSION) return { ok: false, error: 'unsupported-version' };
+
+  if (!isLegacy) {
+    if (typeof candidate.exportedAt !== 'string' || Number.isNaN(Date.parse(candidate.exportedAt))) {
+      return { ok: false, error: 'invalid-exported-at' };
+    }
+  }
+
+  if (!isStrictSettings(candidate.settings)) return { ok: false, error: 'invalid-settings' };
+  if (!isStrictLogs(candidate.logs)) return { ok: false, error: 'invalid-logs' };
+
+  return {
+    ok: true,
+    legacy: isLegacy,
+    backup: {
+      format: AURACYCLE_BACKUP_FORMAT,
+      version: AURACYCLE_BACKUP_VERSION,
+      exportedAt: isLegacy ? new Date().toISOString() : candidate.exportedAt as string,
+      settings: candidate.settings,
+      logs: candidate.logs,
+    },
   };
 }
 

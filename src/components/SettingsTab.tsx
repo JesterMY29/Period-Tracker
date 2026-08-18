@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import { CycleSettings, DayLog } from '../types';
+import { parseBackup, serializeBackup } from '../lib/dataValidation';
 
 interface SettingsTabProps {
   settings: CycleSettings;
@@ -26,14 +27,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
     setStartingPeriodLength(settings.startingPeriodLength || 5);
   }, [settings]);
 
+  const showTemporaryMessage = (message: string, duration = 4000) => {
+    setSaveMessage(message);
+    window.setTimeout(() => setSaveMessage(null), duration);
+  };
+
   const handleSaveSettings = (event: React.FormEvent) => {
     event.preventDefault();
     onUpdateSettings({
       startingCycleLength: Math.max(CYCLE_LENGTH_MIN, Math.min(CYCLE_LENGTH_MAX, Number(startingCycleLength))),
       startingPeriodLength: Math.max(PERIOD_LENGTH_MIN, Math.min(PERIOD_LENGTH_MAX, Number(startingPeriodLength))),
     });
-    setSaveMessage('Prediction baseline updated.');
-    window.setTimeout(() => setSaveMessage(null), 3000);
+    showTemporaryMessage('Prediction baseline updated.', 3000);
   };
 
   const downloadText = (content: string, type: string, filename: string) => {
@@ -47,9 +52,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
   };
 
   const handleExportJSON = () => {
-    downloadText(JSON.stringify({ settings, logs }, null, 2), 'application/json', `auracycle_backup_${new Date().toISOString().split('T')[0]}.json`);
-    setSaveMessage('Backup exported to this device.');
-    window.setTimeout(() => setSaveMessage(null), 3000);
+    downloadText(
+      serializeBackup(settings, logs),
+      'application/json',
+      `auracycle_backup_${new Date().toISOString().split('T')[0]}.json`,
+    );
+    showTemporaryMessage('Versioned backup exported to this device.', 3000);
   };
 
   const handleExportCSV = () => {
@@ -57,30 +65,62 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
     const headers = ['Date', 'Flow', 'Mood', 'Symptoms', 'Notes'];
     const rows = logs.map(log => [log.date, log.flow || 'None', log.mood || '', (log.symptoms || []).join('; '), log.notes || ''].map(escapeCSV).join(','));
     downloadText([headers.map(escapeCSV).join(','), ...rows].join('\n'), 'text/csv;charset=utf-8;', `auracycle_logs_${new Date().toISOString().split('T')[0]}.csv`);
-    setSaveMessage('Cycle log exported as CSV.');
-    window.setTimeout(() => setSaveMessage(null), 3000);
+    showTemporaryMessage('Cycle log exported as CSV.', 3000);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = loadEvent => {
       try {
-        const parsed = JSON.parse(loadEvent.target?.result as string);
-        if (parsed && Array.isArray(parsed.logs)) {
-          onImportLogs(parsed.logs, parsed.settings);
-          setSaveMessage(`Restored ${parsed.logs.length} logged entries.`);
-        } else if (Array.isArray(parsed)) {
-          onImportLogs(parsed);
-          setSaveMessage(`Restored ${parsed.length} logged entries.`);
-        } else {
-          setSaveMessage('That backup file is not a supported AuraCycle format.');
+        const raw = loadEvent.target?.result;
+        if (typeof raw !== 'string') {
+          showTemporaryMessage('Could not read that backup file.');
+          return;
         }
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          showTemporaryMessage('That file is not valid JSON. Nothing was changed.');
+          return;
+        }
+
+        const result = parseBackup(parsed);
+        if (result.ok === false) {
+          const message = (() => {
+            switch (result.error) {
+              case 'invalid-json':
+                return 'That file is not valid JSON. Nothing was changed.';
+              case 'unsupported-format':
+                return 'That file is not an AuraCycle backup. Nothing was changed.';
+              case 'unsupported-version':
+                return 'That AuraCycle backup version is not supported. Nothing was changed.';
+              case 'invalid-exported-at':
+                return 'That backup has an invalid export timestamp. Nothing was changed.';
+              case 'invalid-settings':
+                return 'That backup contains invalid prediction settings. Nothing was changed.';
+              case 'invalid-logs':
+                return 'That backup contains invalid cycle records. Nothing was changed.';
+            }
+          })();
+          showTemporaryMessage(message);
+          return;
+        }
+
+        onImportLogs(result.backup.logs, result.backup.settings);
+        showTemporaryMessage(
+          result.legacy
+            ? `Legacy backup restored: ${result.backup.logs.length} logged ${result.backup.logs.length === 1 ? 'day' : 'days'}.`
+            : `Backup restored: ${result.backup.logs.length} logged ${result.backup.logs.length === 1 ? 'day' : 'days'}.`,
+          5000,
+        );
       } catch {
-        setSaveMessage('Could not read that backup file.');
+        showTemporaryMessage('That backup could not be validated. Nothing was changed.');
       }
-      window.setTimeout(() => setSaveMessage(null), 4000);
     };
     reader.readAsText(file);
     event.target.value = '';
@@ -94,7 +134,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
         <p className="font-sans text-sm text-[#1a1a1a]/65 leading-relaxed max-w-2xl">AuraCycle keeps your records on this device. These settings control the starting assumptions used when there is not yet enough cycle history to establish a personal baseline.</p>
       </section>
 
-      {saveMessage && <div role="status" className="p-3 bg-[#f8f7f4] border border-[#1a1a1a]/10 text-xs font-mono text-[#c47c7c]">{saveMessage}</div>}
+      {saveMessage && <div role="status" aria-live="polite" className="p-3 bg-[#f8f7f4] border border-[#1a1a1a]/10 text-xs font-mono text-[#c47c7c]">{saveMessage}</div>}
 
       <section className="p-5 sm:p-7 bg-white border border-[#1a1a1a]/10 space-y-6">
         <div>
@@ -154,7 +194,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onUpdateSett
           <div className="p-4 bg-white border border-[#c47c7c] space-y-4 max-w-xl" role="alert">
             <div className="flex items-start gap-3 font-mono text-xs text-[#c47c7c]"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>This will permanently remove all {logs.length} logged {logs.length === 1 ? 'day' : 'days'} and your saved settings.</span></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" onClick={() => { onClearAllData(); setShowDeleteConfirm(false); setSaveMessage('All local data cleared.'); }} className="p-3 bg-[#c47c7c] text-[#f8f7f4] font-mono text-xs uppercase tracking-wider cursor-pointer">YES, DELETE</button>
+              <button type="button" onClick={() => { onClearAllData(); setShowDeleteConfirm(false); showTemporaryMessage('All local data cleared.'); }} className="p-3 bg-[#c47c7c] text-[#f8f7f4] font-mono text-xs uppercase tracking-wider cursor-pointer">YES, DELETE</button>
               <button type="button" onClick={() => setShowDeleteConfirm(false)} className="p-3 bg-white border border-[#1a1a1a]/20 text-[#1a1a1a] font-mono text-xs uppercase tracking-wider cursor-pointer">CANCEL</button>
             </div>
           </div>
