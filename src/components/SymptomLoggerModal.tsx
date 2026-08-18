@@ -33,6 +33,16 @@ const FLOW_HINTS: Record<FlowLevel, string> = {
   Heavy: 'Heavy bleeding',
 };
 
+type DraftSnapshot = {
+  logDate: string;
+  flow: FlowLevel;
+  mood?: MoodType;
+  symptoms: SymptomType[];
+  notes: string;
+};
+
+const serializeDraft = (draft: DraftSnapshot): string => JSON.stringify(draft);
+
 export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   isOpen,
   onClose,
@@ -48,20 +58,31 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const initialDraftRef = useRef<string>('');
 
   useEffect(() => {
-    setLogDate(selectedDate);
-    if (existingLog) {
-      setFlow(existingLog.flow || 'None');
-      setMood(existingLog.mood);
-      setSymptoms(existingLog.symptoms || []);
-      setNotes(existingLog.notes || '');
-    } else {
-      setFlow('None');
-      setMood(undefined);
-      setSymptoms([]);
-      setNotes('');
-    }
+    const initialDraft: DraftSnapshot = existingLog
+      ? {
+          logDate: selectedDate,
+          flow: existingLog.flow || 'None',
+          mood: existingLog.mood,
+          symptoms: existingLog.symptoms || [],
+          notes: existingLog.notes || '',
+        }
+      : {
+          logDate: selectedDate,
+          flow: 'None',
+          mood: undefined,
+          symptoms: [],
+          notes: '',
+        };
+
+    setLogDate(initialDraft.logDate);
+    setFlow(initialDraft.flow);
+    setMood(initialDraft.mood);
+    setSymptoms(initialDraft.symptoms);
+    setNotes(initialDraft.notes);
+    initialDraftRef.current = serializeDraft(initialDraft);
     setShowConfirmDelete(false);
   }, [selectedDate, existingLog, isOpen]);
 
@@ -72,7 +93,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        requestClose();
       }
     };
 
@@ -86,6 +107,20 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const hasUnsavedChanges = serializeDraft({ logDate, flow, mood, symptoms, notes }) !== initialDraftRef.current;
+
+  const requestClose = () => {
+    if (!hasUnsavedChanges) {
+      onClose();
+      return;
+    }
+
+    const canConfirm = typeof window !== 'undefined' && typeof window.confirm === 'function';
+    if (!canConfirm || window.confirm('You have unsaved changes. Discard them?')) {
+      onClose();
+    }
+  };
 
   const toggleSymptom = (symptom: SymptomType) => {
     setSymptoms(current => current.includes(symptom)
@@ -137,7 +172,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
               ref={closeButtonRef}
               type="button"
               aria-label="Close log"
-              onClick={onClose}
+              onClick={requestClose}
               className="p-2 border border-[#1a1a1a]/10 hover:bg-[#1a1a1a]/5 transition cursor-pointer text-[#1a1a1a]"
             >
               <X className="w-4 h-4" aria-hidden="true" />
@@ -295,7 +330,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
         <div className="p-4 sm:p-5 bg-white border-t border-[#1a1a1a]/10 flex gap-2 sm:gap-3 font-mono">
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="flex-1 sm:flex-none px-4 py-3 border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs uppercase tracking-wider rounded-lg hover:border-[#1a1a1a] cursor-pointer"
           >
             Cancel
