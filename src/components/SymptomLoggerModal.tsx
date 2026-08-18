@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, CalendarDays, Trash2, Check, AlertCircle, Droplets } from 'lucide-react';
 import { DayLog, FlowLevel, MoodType, SymptomType } from '../types';
 
@@ -47,6 +47,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   const [symptoms, setSymptoms] = useState<SymptomType[]>([]);
   const [notes, setNotes] = useState<string>('');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setLogDate(selectedDate);
@@ -63,6 +64,26 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
     }
     setShowConfirmDelete(false);
   }, [selectedDate, existingLog, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -96,6 +117,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="log-dialog-title"
+        aria-describedby="log-dialog-description"
         className="bg-[#f8f7f4] border border-[#1a1a1a]/15 w-full sm:max-w-lg max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl rounded-t-2xl sm:rounded-none"
       >
         <div className="p-5 sm:p-6 border-b border-[#1a1a1a]/10 bg-white">
@@ -107,22 +129,23 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
               <h2 id="log-dialog-title" className="font-serif text-2xl sm:text-3xl text-[#1a1a1a]">
                 {existingLog ? 'Update your day' : 'How was today?'}
               </h2>
-              <p className="text-xs text-[#1a1a1a]/55 mt-1">
+              <p id="log-dialog-description" className="text-xs text-[#1a1a1a]/55 mt-1">
                 Log the essentials first. Everything else is optional.
               </p>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               aria-label="Close log"
               onClick={onClose}
               className="p-2 border border-[#1a1a1a]/10 hover:bg-[#1a1a1a]/5 transition cursor-pointer text-[#1a1a1a]"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[#1a1a1a]/70">
-            <CalendarDays className="w-4 h-4" />
+            <CalendarDays className="w-4 h-4" aria-hidden="true" />
             <label htmlFor="log-date">Date</label>
             <input
               id="log-date"
@@ -137,7 +160,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
         <div className="p-5 sm:p-6 overflow-y-auto space-y-7 flex-1">
           <section aria-labelledby="flow-heading" className="space-y-3">
             <div className="flex items-center gap-2">
-              <Droplets className="w-4 h-4 text-[#c47c7c]" />
+              <Droplets className="w-4 h-4 text-[#c47c7c]" aria-hidden="true" />
               <div>
                 <h3 id="flow-heading" className="text-sm font-semibold text-[#1a1a1a]">What was your flow?</h3>
                 <p className="text-[11px] text-[#1a1a1a]/50">This is the most important part of today's log.</p>
@@ -217,7 +240,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                     }`}
                   >
                     <span>{symptom}</span>
-                    {isChecked && <Check className="w-3.5 h-3.5 text-[#c47c7c] shrink-0" />}
+                    {isChecked && <Check className="w-3.5 h-3.5 text-[#c47c7c] shrink-0" aria-hidden="true" />}
                   </button>
                 );
               })}
@@ -246,13 +269,13 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                   onClick={() => setShowConfirmDelete(true)}
                   className="text-xs text-[#c47c7c] hover:underline flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                   Delete this day's record
                 </button>
               ) : (
                 <div className="p-3 bg-white border border-[#c47c7c] rounded-lg space-y-3">
                   <div className="flex items-center gap-2 text-[#c47c7c] text-xs">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>Delete the record for {logDate}?</span>
                   </div>
                   <div className="flex items-center gap-2">
