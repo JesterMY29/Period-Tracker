@@ -11,6 +11,7 @@ import { formatDate } from './lib/cycleUtils';
 import { normalizeLogs, normalizeSettings, serializeLogs, serializeSettings } from './lib/dataValidation';
 import { createQuickFlowLog } from './lib/quickLog';
 import { AppTab, DEFAULT_APP_TAB, resolveAppTab } from './lib/navigation';
+import { writeStorageItem } from './lib/storage';
 
 const STORAGE_KEY_SETTINGS = 'auracycle_settings_v2';
 const STORAGE_KEY_LOGS = 'auracycle_logs_v2';
@@ -41,20 +42,27 @@ function readInitialAppTab(): AppTab {
   return resolveAppTab(window.location.hash.slice(1));
 }
 
+function persistSnapshot(settings: CycleSettings, logs: DayLog[]): boolean {
+  const settingsSaved = writeStorageItem(STORAGE_KEY_SETTINGS, serializeSettings(settings));
+  const logsSaved = writeStorageItem(STORAGE_KEY_LOGS, serializeLogs(logs));
+  return settingsSaved && logsSaved;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>(readInitialAppTab);
   const [settings, setSettings] = useState<CycleSettings>(readStoredSettings);
   const [logs, setLogs] = useState<DayLog[]>(readStoredLogs);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
   const [selectedLogDate, setSelectedLogDate] = useState<string>(formatDate(new Date()));
+  const [storageWriteFailed, setStorageWriteFailed] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_SETTINGS, serializeSettings(settings));
-  }, [settings]);
+    setStorageWriteFailed(!persistSnapshot(settings, logs));
+  }, [settings, logs]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_LOGS, serializeLogs(logs));
-  }, [logs]);
+  const retryPersistence = () => {
+    setStorageWriteFailed(!persistSnapshot(settings, logs));
+  };
 
   const todayStr = formatDate(new Date());
 
@@ -92,11 +100,8 @@ export default function App() {
   };
 
   const handleClearAllData = () => {
-    const defaults = getDefaultSettings();
     setLogs([]);
-    setSettings(defaults);
-    localStorage.removeItem(STORAGE_KEY_LOGS);
-    localStorage.removeItem(STORAGE_KEY_SETTINGS);
+    setSettings(getDefaultSettings());
   };
 
   const existingLog = logs.find(log => log.date === selectedLogDate);
@@ -110,6 +115,21 @@ export default function App() {
         Skip to main content
       </a>
       <Header activeTab={activeTab} setActiveTab={handleNavigate} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
+      {storageWriteFailed && (
+        <div
+          role="alert"
+          className="w-full border-b border-[#c47c7c]/30 bg-[#fff8f7] px-4 py-3 text-center text-xs text-[#6f3f3f]"
+        >
+          <span>Your latest changes could not be saved to this device.</span>{' '}
+          <button
+            type="button"
+            onClick={retryPersistence}
+            className="font-semibold underline underline-offset-2 cursor-pointer"
+          >
+            Retry save
+          </button>
+        </div>
+      )}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 outline-none">
         {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onQuickFlowLog={handleQuickFlowLog} onNavigateToCalendar={() => handleNavigate('calendar')} />}
         {activeTab === 'calendar' && <CalendarView logs={logs} settings={settings} onSelectDate={handleOpenLogModalForDate} />}
