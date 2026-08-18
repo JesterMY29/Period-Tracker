@@ -103,8 +103,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] text-[#2d2d2a] font-sans antialiased flex flex-col selection:bg-[#fed9b7]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:px-4 focus:py-3 focus:bg-[#1a1a1a] focus:text-white focus:font-mono focus:text-xs focus:rounded-sm"
+      >
+        Skip to main content
+      </a>
       <Header activeTab={activeTab} setActiveTab={handleNavigate} onOpenLogModal={() => handleOpenLogModalForDate(todayStr)} />
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 outline-none">
         {activeTab === 'home' && <HomeTab logs={logs} settings={settings} onOpenLogModal={handleOpenLogModalForDate} onQuickFlowLog={handleQuickFlowLog} onNavigateToCalendar={() => handleNavigate('calendar')} />}
         {activeTab === 'calendar' && <CalendarView logs={logs} settings={settings} onSelectDate={handleOpenLogModalForDate} />}
         {activeTab === 'history' && <HistoryTab logs={logs} settings={settings} />}
@@ -115,9 +121,9 @@ export default function App() {
         <div className="card-faint p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#c47c7c]">AuraCycle</p>
-            <p className="font-mono text-[10px] text-[#1a1a1a]/55 mt-1">Private, local cycle tracking. No account required.</p>
+            <p className="font-mono text-[10px] text-[#1a1a1a]/55 mt-1">Your cycle records stay on this device. No account is required.</p>
           </div>
-          <p className="font-mono text-[10px] text-[#1a1a1a]/45">No AI • No Cloud • No Ads</p>
+          <p className="font-mono text-[10px] text-[#1a1a1a]/45">Private by design</p>
         </div>
         <p className="text-[10px] text-[#1a1a1a]/45 text-center mt-3">Estimates are mathematical predictions based on recorded entries and do not replace professional medical advice.</p>
       </footer>
