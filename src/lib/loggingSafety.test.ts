@@ -43,7 +43,7 @@ function installDom(dom: JSDOM) {
   }
 }
 
-async function setup(existingLog?: DayLog): Promise<Harness> {
+async function setup(existingLog?: DayLog, onSaveLog?: (log: DayLog, previousDate?: string) => boolean): Promise<Harness> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     url: 'https://auracycle.test/',
     pretendToBeVisual: true,
@@ -62,7 +62,7 @@ async function setup(existingLog?: DayLog): Promise<Harness> {
       onClose: () => {
         root.render(null);
       },
-      onSaveLog: () => undefined,
+      onSaveLog: onSaveLog || (() => true),
       onDeleteLog: () => undefined,
     }));
   });
@@ -209,6 +209,31 @@ test('P2I-04 — reverting an edited field clears dirty state against the origin
     await click(button(harness.container, /^Cancel$/));
 
     assert.equal(confirmCalls, 0);
+    assert.equal(dialog(harness.container), null);
+  } finally {
+    await cleanup(harness);
+  }
+});
+
+test('P2I-05 — saving a date-corrected record identifies the original date', async () => {
+  const existingLog: DayLog = {
+    date: '2026-08-10',
+    flow: 'Light',
+    symptoms: [],
+  };
+  let previousDate: string | undefined;
+  const harness = await setup(existingLog, (_log, originalDate) => {
+    previousDate = originalDate;
+    return true;
+  });
+
+  try {
+    const dateInput = harness.container.querySelector('#log-date') as HTMLInputElement | null;
+    assert.ok(dateInput);
+    await setInputValue(dateInput, '2026-08-11');
+    await click(button(harness.container, /^Save check-in$/));
+
+    assert.equal(previousDate, '2026-08-10');
     assert.equal(dialog(harness.container), null);
   } finally {
     await cleanup(harness);
