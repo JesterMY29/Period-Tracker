@@ -2,7 +2,7 @@ name: AuraCycle Quality Gate
 
 on:
   push:
-    branches: [main, auracycle-v2-phase1-core-engine, auracycle-v2-phase3a-security-hardening]
+    branches: [main, auracycle-v2-phase1-core-engine, auracycle-v2-phase3a-security-hardening, auracycle-v2-phase3c-reliability-hardening]
   pull_request:
     branches: [main]
 
