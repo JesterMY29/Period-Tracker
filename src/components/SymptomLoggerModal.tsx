@@ -43,6 +43,15 @@ type DraftSnapshot = {
 
 const serializeDraft = (draft: DraftSnapshot): string => JSON.stringify(draft);
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'a[href]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   isOpen,
   onClose,
@@ -59,6 +68,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const initialDraftRef = useRef<string>('');
 
   useEffect(() => {
@@ -96,6 +106,32 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
       if (event.key === 'Escape') {
         event.preventDefault();
         requestClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        .filter(element => element.getClientRects().length > 0);
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
@@ -157,6 +193,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="log-dialog-title"
