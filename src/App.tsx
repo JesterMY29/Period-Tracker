@@ -12,6 +12,7 @@ import { normalizeLogs, normalizeSettings, serializeLogs, serializeSettings } fr
 import { createQuickFlowLog } from './lib/quickLog';
 import { AppTab, DEFAULT_APP_TAB, resolveAppTab } from './lib/navigation';
 import { writeStorageItem } from './lib/storage';
+import { replaceDayLog } from './lib/logMutation';
 
 const STORAGE_KEY_SETTINGS = 'auracycle_settings_v2';
 const STORAGE_KEY_LOGS = 'auracycle_logs_v2';
@@ -79,13 +80,22 @@ export default function App() {
     setIsLoggerOpen(true);
   };
 
-  const handleSaveLog = (newLog: DayLog) => {
-    setLogs(prev => normalizeLogs([...prev.filter(log => log.date !== newLog.date), newLog]));
+  const handleSaveLog = (newLog: DayLog, previousDate?: string): boolean => {
+    if (
+      previousDate &&
+      previousDate !== newLog.date &&
+      logs.some(log => log.date === newLog.date)
+    ) {
+      return false;
+    }
+
+    setLogs(prev => replaceDayLog(prev, newLog, previousDate));
+    return true;
   };
 
   const handleQuickFlowLog = (flow: FlowLevel) => {
     const existingLog = logs.find(log => log.date === todayStr);
-    handleSaveLog(createQuickFlowLog(todayStr, flow, existingLog));
+    handleSaveLog(createQuickFlowLog(todayStr, flow, existingLog), existingLog?.date);
   };
 
   const handleDeleteLog = (dateStr: string) => {
