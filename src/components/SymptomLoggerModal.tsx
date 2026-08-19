@@ -7,7 +7,7 @@ interface SymptomLoggerModalProps {
   onClose: () => void;
   selectedDate: string;
   existingLog?: DayLog;
-  onSaveLog: (log: DayLog) => void;
+  onSaveLog: (log: DayLog, previousDate?: string) => boolean;
   onDeleteLog: (date: string) => void;
 }
 
@@ -57,6 +57,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
   const [symptoms, setSymptoms] = useState<SymptomType[]>([]);
   const [notes, setNotes] = useState<string>('');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const initialDraftRef = useRef<string>('');
 
@@ -84,6 +85,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
     setNotes(initialDraft.notes);
     initialDraftRef.current = serializeDraft(initialDraft);
     setShowConfirmDelete(false);
+    setSaveError(null);
   }, [selectedDate, existingLog, isOpen]);
 
   useEffect(() => {
@@ -137,12 +139,18 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
       symptoms,
       notes: notes.trim() ? notes.trim() : undefined,
     };
-    onSaveLog(updatedLog);
+
+    const saved = onSaveLog(updatedLog, existingLog?.date);
+    if (!saved) {
+      setSaveError(`A record already exists for ${logDate}. Choose another date before saving this edit.`);
+      return;
+    }
+
     onClose();
   };
 
   const handleDelete = () => {
-    onDeleteLog(logDate);
+    onDeleteLog(existingLog?.date || logDate);
     onClose();
   };
 
@@ -186,7 +194,10 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
               id="log-date"
               type="date"
               value={logDate}
-              onChange={e => setLogDate(e.target.value)}
+              onChange={e => {
+                setLogDate(e.target.value);
+                setSaveError(null);
+              }}
               className="ml-auto bg-[#f8f7f4] border border-[#1a1a1a]/15 px-2.5 py-2 font-mono text-xs focus:outline-none focus:border-[#1a1a1a]"
             />
           </div>
@@ -311,7 +322,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
                 <div className="p-3 bg-white border border-[#c47c7c] rounded-lg space-y-3">
                   <div className="flex items-center gap-2 text-[#c47c7c] text-xs">
                     <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    <span>Delete the record for {logDate}?</span>
+                    <span>Delete the record for {existingLog.date}?</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={handleDelete} className="px-3 py-2 bg-[#c47c7c] text-white text-xs rounded-md cursor-pointer">
@@ -327,21 +338,28 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
           )}
         </div>
 
-        <div className="p-4 sm:p-5 bg-white border-t border-[#1a1a1a]/10 flex gap-2 sm:gap-3 font-mono">
-          <button
-            type="button"
-            onClick={requestClose}
-            className="flex-1 sm:flex-none px-4 py-3 border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs uppercase tracking-wider rounded-lg hover:border-[#1a1a1a] cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex-1 sm:flex-none sm:min-w-36 px-5 py-3 bg-[#1a1a1a] text-white text-xs uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
-          >
-            Save check-in
-          </button>
+        <div className="p-4 sm:p-5 bg-white border-t border-[#1a1a1a]/10 flex flex-col gap-3 font-mono">
+          {saveError && (
+            <div role="alert" className="p-3 border border-[#c47c7c]/50 bg-[#fff8f7] text-[#6f3f3f] text-xs">
+              {saveError}
+            </div>
+          )}
+          <div className="flex gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={requestClose}
+              className="flex-1 sm:flex-none px-4 py-3 border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs uppercase tracking-wider rounded-lg hover:border-[#1a1a1a] cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex-1 sm:flex-none sm:min-w-36 px-5 py-3 bg-[#1a1a1a] text-white text-xs uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Save check-in
+            </button>
+          </div>
         </div>
       </div>
     </div>
