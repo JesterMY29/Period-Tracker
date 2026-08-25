@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Header } from './components/Header';
 import { HomeTab } from './components/HomeTab';
 import { CalendarView } from './components/CalendarView';
@@ -157,6 +158,7 @@ export default function App() {
         </div>
         <p className="text-[10px] text-[#1a1a1a]/45 text-center mt-3">Estimates are mathematical predictions based on recorded entries and do not replace professional medical advice.</p>
       </footer>
+      <Analytics />
     </div>
   );
 }
