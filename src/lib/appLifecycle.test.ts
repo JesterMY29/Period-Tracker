@@ -171,10 +171,27 @@ async function saveLog(harness: Harness, date: string, flow: string, notes?: str
 async function openCalendarRecord(harness: Harness, date: string) {
   await goTo(harness.container, /^Calendar$/);
   await flush();
-  const day = harness.container.querySelector(`button[aria-label^="${date}"]`);
-  assert.ok(day, `calendar day ${date} should exist`);
-  await click(day);
-  await flush();
+
+  const target = new Date(`${date}T00:00:00Z`);
+  const targetMonth = target.getUTCFullYear() * 12 + target.getUTCMonth();
+  const today = new Date();
+  const currentMonth = today.getFullYear() * 12 + today.getMonth();
+  const direction = targetMonth < currentMonth ? 'previous' : targetMonth > currentMonth ? 'next' : null;
+
+  for (let step = 0; step < 24; step += 1) {
+    const day = harness.container.querySelector(`button[aria-label^="${date}"]`);
+    if (day) {
+      await click(day);
+      await flush();
+      return;
+    }
+
+    assert.ok(direction, `calendar day ${date} should exist in the reachable month range`);
+    await click(button(harness.container, direction === 'previous' ? /^Previous month$/ : /^Next month$/));
+    await flush();
+  }
+
+  assert.fail(`calendar day ${date} should exist after month navigation`);
 }
 
 async function openSettings(harness: Harness) {
