@@ -111,7 +111,8 @@ function button(container: HTMLElement, label: RegExp): HTMLButtonElement {
   const match = Array.from(container.querySelectorAll('button')).find(candidate => {
     const fullText = candidate.textContent?.trim() || '';
     const firstDirectSpan = candidate.querySelector(':scope > span')?.textContent?.trim() || '';
-    return label.test(fullText) || label.test(firstDirectSpan);
+    const ariaLabel = candidate.getAttribute('aria-label') || '';
+    return label.test(fullText) || label.test(firstDirectSpan) || label.test(ariaLabel);
   });
   assert.ok(match, `button ${label} should exist`);
   return match as HTMLButtonElement;
