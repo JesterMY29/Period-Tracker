@@ -115,7 +115,7 @@ export const SymptomLoggerModal: React.FC<SymptomLoggerModalProps> = ({
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-        .filter((element): element is HTMLElement => element.getClientRects().length > 0);
+        .filter((element): element is HTMLElement => (element as HTMLElement).getClientRects().length > 0);
 
       if (focusable.length === 0) {
         event.preventDefault();
