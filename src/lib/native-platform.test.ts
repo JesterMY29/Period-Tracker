@@ -6,6 +6,7 @@ import {resolve} from 'node:path';
 const root = resolve(process.cwd());
 
 // Native project generation is validated against the committed Capacitor output.
+// The next CI run is the authoritative Phase 5B-2 regression gate.
 
 test('Capacitor native project contract is pinned and generated', () => {
   const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
