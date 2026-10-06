@@ -5,6 +5,8 @@ import {resolve} from 'node:path';
 
 const root = resolve(process.cwd());
 
+// Native project generation is validated against the committed Capacitor output.
+
 test('Capacitor native project contract is pinned and generated', () => {
   const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   const config = JSON.parse(readFileSync(resolve(root, 'capacitor.config.json'), 'utf8'));
