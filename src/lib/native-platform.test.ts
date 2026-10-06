@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 
 const root = resolve(process.cwd());
@@ -19,8 +19,8 @@ test('Capacitor native project contract is pinned and generated', () => {
   assert.equal(config.webDir, 'dist');
   assert.equal(config.loggingBehavior, 'none');
 
-  assert.ok(resolve(root, 'ios/App/Package.swift'));
-  assert.ok(resolve(root, 'android/settings.gradle'));
+  assert.equal(existsSync(resolve(root, 'ios/App/Package.swift')), true);
+  assert.equal(existsSync(resolve(root, 'android/settings.gradle')), true);
 });
 
 test('Android native manifest has no runtime permission beyond Capacitor network baseline', () => {
