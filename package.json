@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "engines": {"node": "22.x"},
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
@@ -14,7 +16,9 @@
     "test": "tsx --test src/lib/*.test.ts"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
     "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "5.1.4",
     "lucide-react": "^0.546.0",
@@ -24,6 +28,7 @@
     "vite": "6.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "0.28.1",
@@ -32,5 +37,7 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"
   },
-  "overrides": {"rollup": "4.63.5"}
+  "overrides": {
+    "rollup": "4.63.5"
+  }
 }
