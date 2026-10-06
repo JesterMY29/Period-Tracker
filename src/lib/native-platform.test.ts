@@ -19,7 +19,7 @@ test('Capacitor native project contract is pinned and generated', () => {
   assert.equal(config.webDir, 'dist');
   assert.equal(config.loggingBehavior, 'none');
 
-  assert.equal(existsSync(resolve(root, 'ios/App/Package.swift')), true);
+  assert.equal(existsSync(resolve(root, 'ios/App/CapApp-SPM/Package.swift')), true);
   assert.equal(existsSync(resolve(root, 'android/settings.gradle')), true);
 });
 
