@@ -1,0 +1,52 @@
+name: Finalize Capacitor Native Baseline
+
+on:
+  push:
+    branches: [phase-5b-2-native-platform-generation]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.event.head_commit.message != 'Phase 5B-2: finalize Capacitor native baseline'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: phase-5b-2-native-platform-generation
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install exact dependency graph
+        run: npm install
+
+      - name: Sync Capacitor native projects
+        run: |
+          npm run build
+          npx cap sync
+
+      - name: Regression tests
+        run: npm test
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: High-severity security audit
+        run: npm audit --audit-level=high
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit finalized native baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json ios android src
+          git commit -m "Phase 5B-2: finalize Capacitor native baseline"
+          git push origin HEAD:phase-5b-2-native-platform-generation
