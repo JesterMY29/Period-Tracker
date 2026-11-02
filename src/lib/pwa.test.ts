@@ -19,11 +19,12 @@ test('PWA manifest declares AuraCycle standalone app contract', () => {
   assert.equal(manifest.icons[0].src, '/icon.svg');
 });
 
-test('production entry registers only the local service worker', () => {
+test('production entry registers the local service worker only on the web runtime', () => {
   const source = readFileSync(resolve(root, 'src/main.tsx'), 'utf8');
 
   assert.match(source, /navigator\.serviceWorker\.register\('\/sw\.js'\)/);
   assert.match(source, /import\.meta\.env\.PROD/);
+  assert.match(source, /!Capacitor\.isNativePlatform\(\)/);
 });
 
 test('service worker does not intercept non-GET or cross-origin requests', () => {
